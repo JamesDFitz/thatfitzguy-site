@@ -22,7 +22,6 @@
       line-height: 1.6;
     }
     header {
-      position: relative; /* allow pseudo fade overlay */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -32,18 +31,9 @@
       padding: 0 1rem;
       background: linear-gradient(135deg, #1a73e8 0%, #673ab7 100%);
       color: #fff;
+      transition: opacity 0.2s ease-out; /* smooth fade */
     }
-    /* fade-out overlay */
-    header::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 120px; /* adjust fade length */
-      background: linear-gradient(to bottom, rgba(103,58,183,0) 0%, var(--bg) 100%);
-      pointer-events: none;
-    }
+
     header h1 {
       font-size: clamp(2.5rem, 5vw, 4rem);
       font-weight: 800;
@@ -101,23 +91,23 @@
   </style>
 </head>
 <body>
-  <header>
+  <header id="hero">
     <h1>Jim Fitz</h1>
-    <p>Thinker • Maker • Storyteller</p>
+    <p>Engineer • Maker • Storyteller</p>
     <a class="button" href="#contact">Get in touch</a>
   </header>
 
   <section class="section" id="about">
     <h2>About Me</h2>
-    <p>Hello! I'm Jim Fitz, a multifaceted thinker, safety professional, and creative hobbyist. Whether I'm crafting intricate D&D campaigns, building 3D‑printed terrain, or innovating safer workflows in manufacturing, I love turning ideas into reality. I have a history of obsession with VR, AI, 3D printing, and other emerging technology.</p>
+    <p>Hello! I'm Jim Fitz, a multifaceted engineer, safety professional, and creative hobbyist. Whether I'm crafting intricate D&D campaigns, building 3D-printed terrain, or innovating safer workflows in manufacturing, I love turning ideas into reality.</p>
   </section>
 
   <section class="section" id="projects">
     <h2>Featured Projects</h2>
     <div class="cards">
       <article class="card">
-         <h3>Workplace Safety Programs</h3>
-        <p>Safety culture framework adopted in manufacturing environments to reduce incidents and build true safety systems and culture.</p>
+        <h3>SAFELoop Program</h3>
+        <p>A proactive safety culture framework adopted in multiple facilities to reduce incidents by 35%.</p>
       </article>
       <article class="card">
         <h3>Duskmire D&D Setting</h3>
@@ -139,5 +129,19 @@
   <footer>
     © 2025 Jim Fitz – Built with ❤️ and ☕
   </footer>
+
+  <script>
+    // Fade the hero as the user scrolls
+    (function() {
+      const hero = document.getElementById('hero');
+      const heroHeight = hero.offsetHeight;
+      function onScroll() {
+        const scrollY = window.scrollY;
+        const opacity = Math.max(0, 1 - scrollY / heroHeight);
+        hero.style.opacity = opacity;
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
+  </script>
 </body>
 </html>
