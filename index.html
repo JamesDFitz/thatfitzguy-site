@@ -31,7 +31,7 @@
       padding: 0 1rem;
       background: linear-gradient(135deg, #1a73e8 0%, #673ab7 100%);
       color: #fff;
-      transition: opacity 0.2s ease-out; /* smooth fade */
+      transition: opacity 0.25s ease-out; /* smooth fade */
     }
 
     header h1 {
@@ -106,8 +106,8 @@
     <h2>Featured Projects</h2>
     <div class="cards">
       <article class="card">
-        <h3>Workplace Safety Programs</h3>
-        <p>Safety culture framework adopted in manufacturing environments to reduce incidents and build true safety systems and culture.</p>
+        <h3>Safety Culture Initiative</h3>
+        <p>A proactive safety culture framework adopted in multiple facilities to reduce incidents by 35%.</p>
       </article>
       <article class="card">
         <h3>Duskmire D&D Setting</h3>
@@ -131,17 +131,20 @@
   </footer>
 
   <script>
-    // Fade the hero as the user scrolls
+    // Fade the hero relative to total scrollable height so it always hits 0 at the bottom
     (function() {
       const hero = document.getElementById('hero');
-      const heroHeight = hero.offsetHeight;
-      function onScroll() {
+      function updateOpacity() {
         const scrollY = window.scrollY;
-        const opacity = Math.max(0, 1 - scrollY / heroHeight);
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const opacity = Math.max(0, 1 - scrollY / maxScroll);
         hero.style.opacity = opacity;
       }
-      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('scroll', updateOpacity, { passive: true });
+      window.addEventListener('resize', updateOpacity);
+      updateOpacity(); // initialize on load
     })();
   </script>
 </body>
 </html>
+
