@@ -8,7 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <!-- Leaflet CSS (correct SRI hash) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha512-pY8+1VTJ4rvGNe/Qt/gruOKZm_q2V3lyaSCIH9Mpm4JQgv5hrVSFev9xrXyZUeXV7ainjWFWFlNKDXT+KXr+gw==" crossorigin=""/>
+    <!-- Leaflet CSS (integrity removed to ensure load) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <style>
     :root {
       --bg: #fdfdfd;
@@ -59,26 +60,6 @@
         {
           title: 'The Starry Night',
           artist: 'Vincent van Gogh',
-          img: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/The_Starry_Night.jpg',
-          museum: 'Museum of Modern Art',
-          city: 'New York',
-          country: 'USA',
-          lat: 40.7614,
-          lng: -73.9776
-        },
-        {
-          title: 'Mona Lisa',
-          artist: 'Leonardo da Vinci',
-          img: 'https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg',
-          museum: 'Louvre Museum',
-          city: 'Paris',
-          country: 'France',
-          lat: 48.8606,
-          lng: 2.3376
-        },
-        {
-          title: 'Girl with a Pearl Earring',
-          artist: 'Johannes Vermeer',
           img: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Meisje_met_de_parel.jpg',
           museum: 'Mauritshuis',
           city: 'The Hague',
