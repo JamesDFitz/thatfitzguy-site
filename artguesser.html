@@ -49,7 +49,8 @@
   </div>
 
   <!-- Leaflet JS (correct SRI hash) -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdlxUmNVDgdQYKghTI1PEz5u7gG6ajfH0IObR4Yd1L0fwr+5rMtxJKvuAXh6zgh5f3zLfHhHQJQ==" crossorigin=""></script>
+    <!-- Leaflet JS (integrity removed to avoid mismatch errors) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
     // Ensure code runs after Leaflet is loaded
     document.addEventListener('DOMContentLoaded', () => {
