@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArtGuesser – Guess the Gallery!</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Leaflet CSS (correct SRI hash) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha512-pY8+1VTJ4rvGNe/Qt/gruOKZm_q2V3lyaSCIH9Mpm4JQgv5hrVSFev9xrXyZUeXV7ainjWFWFlNKDXT+KXr+gw==" crossorigin=""/>
+  <style>
+    :root {
+      --bg: #fdfdfd;
+      --text: #333;
+      --primary: #1a73e8;
+      --accent: #f57c00;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+    header { padding: 1rem 2rem; background: var(--primary); color: #fff; text-align: center; }
+    header h1 { font-size: 1.75rem; font-weight: 800; }
+
+    #game-wrapper { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; max-width: 1200px; margin: 0 auto; }
+    #art-container { text-align: center; }
+    #art-container img { max-width: 100%; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+    #map { height: 60vh; width: 100%; border: 1px solid #e5e5e5; border-radius: 12px; }
+
+    #info { margin-top: 1rem; font-size: 1rem; }
+    #info .actual { font-weight: 600; }
+    #next-btn { margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ArtGuesser 🎨🌍</h1>
+    <p>Guess where famous artworks are housed by dropping a pin on the map.</p>
+  </header>
+
+  <div id="game-wrapper">
+    <div id="art-container">
+      <img id="art-img" src="" alt="Artwork" />
+    </div>
+    <div id="map"></div>
+
+    <div id="info"></div>
+    <button id="next-btn" style="display:none;">Next Artwork</button>
+  </div>
+
+  <!-- Leaflet JS (correct SRI hash) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdlxUmNVDgdQYKghTI1PEz5u7gG6ajfH0IObR4Yd1L0fwr+5rMtxJKvuAXh6zgh5f3zLfHhHQJQ==" crossorigin=""></script>
+  <script>
+    // Ensure code runs after Leaflet is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      // Minimal demo dataset (public domain images)
+      const artworks = [
+        {
+          title: 'The Starry Night',
+          artist: 'Vincent van Gogh',
+          img: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/The_Starry_Night.jpg',
+          museum: 'Museum of Modern Art',
+          city: 'New York',
+          country: 'USA',
+          lat: 40.7614,
+          lng: -73.9776
+        },
+        {
+          title: 'Mona Lisa',
+          artist: 'Leonardo da Vinci',
+          img: 'https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg',
+          museum: 'Louvre Museum',
+          city: 'Paris',
+          country: 'France',
+          lat: 48.8606,
+          lng: 2.3376
+        },
+        {
+          title: 'Girl with a Pearl Earring',
+          artist: 'Johannes Vermeer',
+          img: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Meisje_met_de_parel.jpg',
+          museum: 'Mauritshuis',
+          city: 'The Hague',
+          country: 'Netherlands',
+          lat: 52.0809,
+          lng: 4.3146
+        }
+      ];
+
+      let current = 0;
+      let userMarker, actualMarker, line;
+
+      const artImg = document.getElementById('art-img');
+      const infoDiv = document.getElementById('info');
+      const nextBtn = document.getElementById('next-btn');
+
+      // Initialize map
+      const map = L.map('map').setView([20, 0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Helper: haversine distance in km
+      function distance(lat1, lon1, lat2, lon2) {
+        const toRad = deg => deg * Math.PI / 180;
+        const R = 6371; // Earth km
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      function loadArtwork() {
+        const art = artworks[current];
+        artImg.src = art.img;
+        artImg.alt = `${art.title} by ${art.artist}`;
+        infoDiv.textContent = 'Click on the map where you think this artwork is located.';
+        nextBtn.style.display = 'none';
+        // remove previous markers/lines
+        if (userMarker) { map.removeLayer(userMarker); }
+        if (actualMarker) { map.removeLayer(actualMarker); }
+        if (line) { map.removeLayer(line); }
+      }
+
+      map.on('click', function(e) {
+        if (userMarker) return; // prevent multiple guesses
+        const art = artworks[current];
+        const { lat, lng } = e.latlng;
+        userMarker = L.marker([lat, lng]).addTo(map);
+        actualMarker = L.marker([art.lat, art.lng], {
+          icon: L.icon({
+            iconUrl:'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png',
+            iconSize:[30,40],
+            iconAnchor:[15,40]
+          })
+        }).addTo(map);
+        line = L.polyline([[lat, lng], [art.lat, art.lng]], { color: 'red' }).addTo(map);
+        const dist = distance(lat, lng, art.lat, art.lng);
+        infoDiv.innerHTML = `You were <strong>${dist.toFixed(0)} km</strong> away.<br>Actual location: <span class="actual">${art.museum}, ${art.city}, ${art.country}</span><br><em>${art.title}</em> by ${art.artist}`;
+        nextBtn.style.display = 'inline-block';
+      });
+
+      nextBtn.addEventListener('click', () => {
+        current = (current + 1) % artworks.length;
+        userMarker = actualMarker = line = null;
+        loadArtwork();
+      });
+
+      loadArtwork();
+    });
+  </script>
+</body>
+</html>
