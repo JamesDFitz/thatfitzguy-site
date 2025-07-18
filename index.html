@@ -22,6 +22,7 @@
       line-height: 1.6;
     }
     header {
+      position: relative; /* allow pseudo fade overlay */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -31,6 +32,17 @@
       padding: 0 1rem;
       background: linear-gradient(135deg, #1a73e8 0%, #673ab7 100%);
       color: #fff;
+    }
+    /* fade-out overlay */
+    header::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 120px; /* adjust fade length */
+      background: linear-gradient(to bottom, rgba(103,58,183,0) 0%, var(--bg) 100%);
+      pointer-events: none;
     }
     header h1 {
       font-size: clamp(2.5rem, 5vw, 4rem);
@@ -104,15 +116,15 @@
     <h2>Featured Projects</h2>
     <div class="cards">
       <article class="card">
-        <h3>Workplace Safety Programs</h3>
+         <h3>Workplace Safety Programs</h3>
         <p>Safety culture framework adopted in manufacturing environments to reduce incidents and build true safety systems and culture.</p>
       </article>
       <article class="card">
         <h3>Duskmire D&D Setting</h3>
-        <p>A sprawling city setting inspired by New Orleans, complete with politics, vampires, and ghost‑filled bayous.</p>
+        <p>A sprawling city setting inspired by New Orleans, complete with politics, vampires, and ghost-filled bayous.</p>
       </article>
       <article class="card">
-        <h3>3D‑Printed Terrain Kits</h3>
+        <h3>3D-Printed Terrain Kits</h3>
         <p>Modular dungeon tiles and miniatures sold via Etsy, helping DMs bring their tables to life.</p>
       </article>
     </div>
