@@ -21,19 +21,13 @@
     #map{height:60vh;border:1px solid #e5e5e5;border-radius:12px}
     #info{margin-top:.8rem;font-size:1rem}
     #info .actual{font-weight:600}
-    button, .btn{margin-top:1rem;padding:.7rem 1.4rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+    button,.btn{margin-top:1rem;padding:.7rem 1.4rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
     [hidden]{display:none !important}
-    @keyframes drop{
-  0%   { transform:translateY(-600px); opacity:0; }
-  80%  { transform:translateY(8px);   opacity:1; }
-  90%  { transform:translateY(-4px);  }
-  100% { transform:translateY(0);     }
-}80%{margin-top:8px;opacity:1}90%{margin-top:-4px}100%{margin-top:0}}
+    @keyframes drop{0%{transform:translateY(-600px);opacity:0}80%{transform:translateY(8px);opacity:1}90%{transform:translateY(-4px)}100%{transform:translateY(0)}}
     .drop{animation:drop .6s ease-out forwards}
-    /* Lightbox */
     #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity .3s}
     #lightbox.active{opacity:1;pointer-events:auto}
-    #lightbox img{max-width:90vw;max-height:90vh;border-radius:8px}
+    #lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;transition:transform .2s ease-out}
   </style>
 </head>
 <body>
@@ -52,52 +46,47 @@
     <button id="next" hidden>Next Artwork</button>
   </div>
 
-  <!-- Lightbox overlay -->
   <div id="lightbox"><img id="lightImg" src="" alt="Artwork large view"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-  document.addEventListener('DOMContentLoaded', ()=>{
+  document.addEventListener('DOMContentLoaded',()=>{
     const $=id=>document.getElementById(id);
     const loading=$('loading'), img=$('art'), info=$('info'), err=$('err'), next=$('next'), famousChk=$('famousToggle');
     const lightbox=$('lightbox'), lightImg=$('lightImg');
 
-        /* -------- lightbox click / open -------- */
+    /* ---------- Load dataset embedded by Worker ---------- */
+    let works=[], famousList=[];
+    try{
+      const raw=document.getElementById('dataset').textContent;
+      const data=JSON.parse(raw||'{}');
+      works=data.results?.bindings.map(b=>({
+        title:b.itemLabel.value,
+        artist:b.artistLabel.value,
+        img:b.image.value,
+        museum:b.collectionLabel.value,
+        lat:+b.lat.value,
+        lng:+b.lon.value,
+        wiki:b.w?.value||''
+      }))||[];
+      famousList=works.filter(w=>w.wiki);
+    }catch(e){console.error('Dataset parse error',e);}  
+    const fallback=[{title:'Mona Lisa',artist:'Leonardo da Vinci',img:'https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg',museum:'Louvre Museum',lat:48.8606,lng:2.3376,wiki:'https://en.wikipedia.org/wiki/Mona_Lisa'}];
+    if(!works.length){works=famousList=fallback;err.textContent='Using fallback dataset';}
+
+    /* ---------- Lightbox zoom ---------- */
     let scale=1;
-    img.addEventListener('click',()=>{
-      if(img.hidden) return;
-      scale=1;
-      lightImg.src=img.src;
-      lightImg.style.transform='scale(1)';
-      lightbox.classList.add('active');
-    });
+    img.addEventListener('click',()=>{if(img.hidden)return;scale=1;lightImg.src=img.src;lightImg.style.transform='scale(1)';lightbox.classList.add('active');});
     lightbox.addEventListener('click',()=>lightbox.classList.remove('active'));
+    lightImg.addEventListener('wheel',e=>{e.preventDefault();const delta=e.deltaY<0?0.15:-0.15;scale=Math.min(Math.max(0.5,scale+delta),6);const rect=lightImg.getBoundingClientRect();const x=((e.clientX-rect.left)/rect.width)*100;const y=((e.clientY-rect.top)/rect.height)*100;lightImg.style.transformOrigin=`${x}% ${y}%`;lightImg.style.transform=`scale(${scale})`;},{passive:false});
+    lightImg.addEventListener('dblclick',()=>{scale=1;lightImg.style.transform='scale(1)'});
 
-    /* -------- wheel zoom on the image itself -------- */
-    lightImg.addEventListener('wheel',e=>{
-      e.preventDefault();
-      const delta = e.deltaY < 0 ? 0.15 : -0.15;
-      scale = Math.min(Math.max(0.5, scale + delta), 6);
-      const rect = lightImg.getBoundingClientRect();
-      const xPct = ((e.clientX - rect.left) / rect.width) * 100;
-      const yPct = ((e.clientY - rect.top) / rect.height) * 100;
-      lightImg.style.transformOrigin = `${xPct}% ${yPct}%`;
-      lightImg.style.transform = `scale(${scale})`;
-    }, { passive:false });
-    /* double‑click resets */
-    lightImg.addEventListener('dblclick',()=>{
-      scale=1;
-      lightImg.style.transform='scale(1)';
-    });
-
-    
-
-    let famousOnly=true;
-    famousChk.addEventListener('change',()=>{famousOnly=famousChk.checked;loadWork();});
-
+    /* ---------- Controls ---------- */
+    let famousOnly=true;famousChk.addEventListener('change',()=>{famousOnly=famousChk.checked;loadWork();});
     const rand=a=>a[Math.floor(Math.random()*a.length)];
     const hav=(a,b,c,d)=>{const R=6371,rad=x=>x*Math.PI/180;const dLat=rad(c-a),dLon=rad(d-b);const s=Math.sin(dLat/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));};
 
+    /* ---------- Map ---------- */
     const guessIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',iconRetinaUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],shadowSize:[41,41]});
     const destIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',iconRetinaUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],shadowSize:[41,41]});
 
@@ -106,61 +95,41 @@
     let uMark,aMark,line,current;
     const resetMarkers=()=>{[uMark,aMark,line].forEach(m=>m&&map.removeLayer(m));uMark=aMark=line=null;};
 
-    let works=[],famousList=[];
-    async function fetchDataset(){
-      const q=`SELECT ?item ?itemLabel ?image ?collectionLabel ?lat ?lon ?artistLabel ?w WHERE { ?item wdt:P31 wd:Q3305213; wdt:P170 ?artist; wdt:P18 ?image; wdt:P195 ?collection. ?collection wdt:P625 ?coords. BIND(geof:latitude(?coords) AS ?lat) BIND(geof:longitude(?coords) AS ?lon) OPTIONAL{ ?item schema:about ?w. ?w schema:isPartOf <https://en.wikipedia.org/> } SERVICE wikibase:label { bd:serviceParam wikibase:language 'en'. } } LIMIT 250`;
-      const url=`https://query.wikidata.org/sparql?format=json&query=${encodeURIComponent(q)}`;
-      try{const r=await fetch(url,{headers:{'Accept':'application/sparql-results+json','User-Agent':'ArtGuesser'}});const j=await r.json();works=j.results.bindings.map(b=>({title:b.itemLabel.value,artist:b.artistLabel.value,img:b.image.value,museum:b.collectionLabel.value,lat:+b.lat.value,lng:+b.lon.value,wiki:b.w?b.w.value:''}));famousList=works.filter(w=>w.wiki);}catch(e){console.error(e);}
-    }
-
-    const fallback=[{title:'Mona Lisa',artist:'Leonardo da Vinci',img:'https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg',museum:'Louvre Museum',lat:48.8606,lng:2.3376,wiki:'https://en.wikipedia.org/wiki/Mona_Lisa'}];
     const pool=()=>famousOnly&&famousList.length?famousList:works;
 
     function loadWork(){
       const arr=pool();if(!arr.length){err.textContent='No artworks available.';return;}
       resetMarkers();map.flyTo([20,0],2,{duration:1});
-      img.hidden=true;loading.hidden=false;info.textContent='';err.textContent='';next.hidden=true;
-      current=rand(arr);img.src=current.img;img.alt=`${current.title} by ${current.artist}`;      img.onload = () => {
-        loading.hidden = true;   /* hide the “Loading dataset…” text */
-        img.hidden   = false;
-        info.textContent = 'Click where you think this masterpiece lives.';
-      };
+      img.hidden=true;loading.hidden=false;info.textContent='';next.hidden=true;
+      current=rand(arr);
+      img.src=current.img;
+      img.alt=`${current.title} by ${current.artist}`;
+      img.onload=()=>{loading.hidden=true;img.hidden=false;info.textContent='Click where you think this masterpiece lives.'};
     }
 
+    /* ---------- Gameplay ---------- */
     map.on('click',e=>{
-      if(uMark||!current)return;const {lat,lng}=e.latlng;const b=L.latLngBounds([lat,lng],[current.lat,current.lng]);map.fitBounds(b,{padding:[60,60],duration:1.2});
+      if(uMark||!current)return;const {lat,lng}=e.latlng;const bounds=L.latLngBounds([lat,lng],[current.lat,current.lng]);map.fitBounds(bounds,{padding:[60,60],duration:1.2});
       map.once('moveend',()=>{
-        uMark=L.marker([lat,lng],{icon:guessIcon}).addTo(map);
-        uMark._icon.classList.add('drop');
+        uMark=L.marker([lat,lng],{icon:guessIcon}).addTo(map);uMark._icon.classList.add('drop');
         line=L.polyline([[lat,lng]],{color:'red',weight:3}).addTo(map);
-        const s=[lat,lng],d=[current.lat,current.lng];let f=0;const steps=60;const tmr=setInterval(()=>{f++;const t=f/steps;line.setLatLngs([s,[s[0]+(d[0]-s[0])*t,s[1]+(d[1]-s[1])*t]]);if(f===steps){clearInterval(tmr);line.setLatLngs([s,d]);aMark=L.marker(d,{icon:destIcon}).addTo(map);aMark._icon.classList.add('drop');            const km = hav(lat, lng, d[0], d[1]).toFixed(0);
-            let html = `You were <strong>${km} km</strong> away.<br><span class='actual'>${current.museum}</span><br><em>${current.title}</em> by ${current.artist}`;
-            if (famousOnly) {
-              const q = encodeURIComponent(`${current.title} ${current.artist}`);
-              html += `<br><a class='btn' href='https://www.google.com/search?q=${q}&btnI=1' target='_blank' rel='noopener'>Learn&nbsp;More</a>`;
-            }
-            info.innerHTML = html;
-
-            /* --- reverse‑geocode museum coords to show City, Country --- */
-            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${d[0]}&lon=${d[1]}&zoom=10&addressdetails=1`)
-              .then(r=>r.json())
-              .then(g=>{
-                const a = g.address || {};
-                const city = a.city || a.town || a.village || a.municipality || '';
-                const country = a.country || '';
-                if (city || country) {
-                  const loc = `${current.museum}, ${city}${city && country ? ', ' : ''}${country}`;
-                  info.innerHTML = html.replace(current.museum, loc);
-                }
-              })
-              .catch(()=>{/* ignore */});next.hidden=false;}},20);
+        const start=[lat,lng], dest=[current.lat,current.lng];
+        let frame=0,constSteps=60;
+        const tmr=setInterval(()=>{frame++;const t=frame/constSteps;line.setLatLngs([start,[start[0]+(dest[0]-start[0])*t,start[1]+(dest[1]-start[1])*t]]);if(frame===constSteps){clearInterval(tmr);line.setLatLngs([start,dest]);aMark=L.marker(dest,{icon:destIcon}).addTo(map);aMark._icon.classList.add('drop');
+          const km=hav(lat,lng,dest[0],dest[1]).toFixed(0);
+          let html=`You were <strong>${km} km</strong> away.<br><span class='actual'>${current.museum}</span><br><em>${current.title}</em> by ${current.artist}`;
+          if(famousOnly){const q=encodeURIComponent(`${current.title} ${current.artist}`);html+=`<br><a class='btn' href='https://www.google.com/search?q=${q}&btnI=1' target='_blank' rel='noopener'>Learn&nbsp;More</a>`;}
+          info.innerHTML=html;
+          /* reverse geocode */
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${dest[0]}&lon=${dest[1]}&zoom=10&addressdetails=1`).then(r=>r.json()).then(g=>{const a=g.address||{};const city=a.city||a.town||a.village||a.municipality||'';const country=a.country||'';if(city||country){info.innerHTML=html.replace(current.museum,`${current.museum}, ${city}${city&&country?', ':''}${country}`);}}).catch(()=>{});
+          next.hidden=false;
+        }},20);
       });
     });
 
     next.onclick=loadWork;
-    (async()=>{await fetchDataset();if(!works.length){works=fallback;famousList=fallback;err.textContent='Dataset fetch failed; using fallback.';}loadWork();})();
+    loadWork();
   });
   </script>
-  <!-- __DATASET__ -->
 </body>
 </html>
