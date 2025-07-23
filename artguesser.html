@@ -55,12 +55,12 @@
     const loading=$('loading'), img=$('art'), info=$('info'), err=$('err'), next=$('next'), famousChk=$('famousToggle');
     const lightbox=$('lightbox'), lightImg=$('lightImg');
 
-    /* ---------- Load dataset embedded by Worker ---------- */
+    /* ---------- dataset from Worker ---------- */
     let works=[], famousList=[];
     try{
       const raw=document.getElementById('dataset').textContent;
       const data=JSON.parse(raw||'{}');
-      works=data.results?.bindings.map(b=>({
+      works=(data.results?.bindings||[]).map(b=>({
         title:b.itemLabel.value,
         artist:b.artistLabel.value,
         img:b.image.value,
@@ -68,33 +68,31 @@
         lat:+b.lat.value,
         lng:+b.lon.value,
         wiki:b.w?.value||''
-      }))||[];
+      }));
       famousList=works.filter(w=>w.wiki);
     }catch(e){console.error('Dataset parse error',e);}  
-    const fallback=[{title:'Mona Lisa',artist:'Leonardo da Vinci',img:'https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg',museum:'Louvre Museum',lat:48.8606,lng:2.3376,wiki:'https://en.wikipedia.org/wiki/Mona_Lisa'}];
-    if(!works.length){works=famousList=fallback;err.textContent='Using fallback dataset';}
+    if(!works.length){err.textContent='Dataset missing.';return;}
 
-    /* ---------- Lightbox zoom ---------- */
+    /* ---------- lightbox zoom ---------- */
     let scale=1;
     img.addEventListener('click',()=>{if(img.hidden)return;scale=1;lightImg.src=img.src;lightImg.style.transform='scale(1)';lightbox.classList.add('active');});
     lightbox.addEventListener('click',()=>lightbox.classList.remove('active'));
-    lightImg.addEventListener('wheel',e=>{e.preventDefault();const delta=e.deltaY<0?0.15:-0.15;scale=Math.min(Math.max(0.5,scale+delta),6);const rect=lightImg.getBoundingClientRect();const x=((e.clientX-rect.left)/rect.width)*100;const y=((e.clientY-rect.top)/rect.height)*100;lightImg.style.transformOrigin=`${x}% ${y}%`;lightImg.style.transform=`scale(${scale})`;},{passive:false});
+    lightImg.addEventListener('wheel',e=>{e.preventDefault();const delta=e.deltaY<0?0.15:-0.15;scale=Math.min(Math.max(0.5,scale+delta),6);const r=lightImg.getBoundingClientRect();const x=((e.clientX-r.left)/r.width)*100;const y=((e.clientY-r.top)/r.height)*100;lightImg.style.transformOrigin=`${x}% ${y}%`;lightImg.style.transform=`scale(${scale})`;},{passive:false});
     lightImg.addEventListener('dblclick',()=>{scale=1;lightImg.style.transform='scale(1)'});
 
-    /* ---------- Controls ---------- */
+    /* ---------- controls ---------- */
     let famousOnly=true;famousChk.addEventListener('change',()=>{famousOnly=famousChk.checked;loadWork();});
     const rand=a=>a[Math.floor(Math.random()*a.length)];
     const hav=(a,b,c,d)=>{const R=6371,rad=x=>x*Math.PI/180;const dLat=rad(c-a),dLon=rad(d-b);const s=Math.sin(dLat/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(dLon/2)**2;return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));};
 
-    /* ---------- Map ---------- */
-    const guessIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',iconRetinaUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],shadowSize:[41,41]});
+    /* ---------- map ---------- */
+    const guessIcon=L.icon({iconUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],shadowSize:[41,41]});
     const destIcon=L.icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',iconRetinaUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],shadowSize:[41,41]});
 
     const map=L.map('map').setView([20,0],2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
     let uMark,aMark,line,current;
     const resetMarkers=()=>{[uMark,aMark,line].forEach(m=>m&&map.removeLayer(m));uMark=aMark=line=null;};
-
     const pool=()=>famousOnly&&famousList.length?famousList:works;
 
     function loadWork(){
@@ -102,35 +100,5 @@
       resetMarkers();map.flyTo([20,0],2,{duration:1});
       img.hidden=true;loading.hidden=false;info.textContent='';next.hidden=true;
       current=rand(arr);
-      img.src=current.img;
-      img.alt=`${current.title} by ${current.artist}`;
-      img.onload=()=>{loading.hidden=true;img.hidden=false;info.textContent='Click where you think this masterpiece lives.'};
-    }
-
-    /* ---------- Gameplay ---------- */
-    map.on('click',e=>{
-      if(uMark||!current)return;const {lat,lng}=e.latlng;const bounds=L.latLngBounds([lat,lng],[current.lat,current.lng]);map.fitBounds(bounds,{padding:[60,60],duration:1.2});
-      map.once('moveend',()=>{
-        uMark=L.marker([lat,lng],{icon:guessIcon}).addTo(map);uMark._icon.classList.add('drop');
-        line=L.polyline([[lat,lng]],{color:'red',weight:3}).addTo(map);
-        const start=[lat,lng], dest=[current.lat,current.lng];
-        let frame=0,constSteps=60;
-        const tmr=setInterval(()=>{frame++;const t=frame/constSteps;line.setLatLngs([start,[start[0]+(dest[0]-start[0])*t,start[1]+(dest[1]-start[1])*t]]);if(frame===constSteps){clearInterval(tmr);line.setLatLngs([start,dest]);aMark=L.marker(dest,{icon:destIcon}).addTo(map);aMark._icon.classList.add('drop');
-          const km=hav(lat,lng,dest[0],dest[1]).toFixed(0);
-          let html=`You were <strong>${km} km</strong> away.<br><span class='actual'>${current.museum}</span><br><em>${current.title}</em> by ${current.artist}`;
-          if(famousOnly){const q=encodeURIComponent(`${current.title} ${current.artist}`);html+=`<br><a class='btn' href='https://www.google.com/search?q=${q}&btnI=1' target='_blank' rel='noopener'>Learn&nbsp;More</a>`;}
-          info.innerHTML=html;
-          /* reverse geocode */
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${dest[0]}&lon=${dest[1]}&zoom=10&addressdetails=1`).then(r=>r.json()).then(g=>{const a=g.address||{};const city=a.city||a.town||a.village||a.municipality||'';const country=a.country||'';if(city||country){info.innerHTML=html.replace(current.museum,`${current.museum}, ${city}${city&&country?', ':''}${country}`);}}).catch(()=>{});
-          next.hidden=false;
-        }},20);
-      });
-    });
-
-    next.onclick=loadWork;
-    loadWork();
-  });
-  </script>
-  <!-- __DATASET__ -->
-</body>
-</html>
+      img.src=current.img;img.alt=`${current.title} by ${current.artist}`;
+      img.onload=()=>{loading.hidden
