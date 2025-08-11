@@ -76,3 +76,16 @@ a:hover{text-decoration:underline}
 .target .ghost { color:#9aa0a6; }
 .target .ok    { color:#111; }
 .target .err   { background:#ffe7e7; color:#a40000; }
+
+/* Pills */
+.pill { background:#eef2ff; color:#1e3a8a; padding:.25rem .6rem; border-radius:999px; font-weight:600; margin-left:.5rem; }
+.pill--cal { background:#fff7ed; color:#9a3412; }
+
+/* Intro overlay */
+.intro-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; opacity:0; pointer-events:none; transition:opacity .25s; }
+.intro-overlay.active { opacity:1; pointer-events:auto; }
+.intro-card { background:#fff; max-width:640px; padding:1.25rem 1.25rem 1rem; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.15); }
+.intro-card h3 { margin:0 0 .5rem 0; font-size:1.25rem; }
+.intro-card p  { margin:0 0 .75rem 0; color:#444; }
+.intro-card .btn { background:#1a73e8; color:#fff; border:none; border-radius:8px; padding:.6rem 1.2rem; cursor:pointer; }
+
