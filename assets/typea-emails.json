@@ -1,0 +1,28 @@
+[
+  { "id":"E1001","sender":"Facilities","subject":"Coffee machine down","bodyTarget":"Hi team — the 3rd floor coffee machine is out. Tech ETA 2pm. Sorry!","urgency":"normal" },
+  { "id":"E1002","sender":"HR","subject":"Policy acknowledgement","bodyTarget":"Please reply 'Acknowledged' to confirm you have reviewed the handbook updates.","urgency":"low" },
+  { "id":"E1003","sender":"Finance","subject":"Receipt missing","bodyTarget":"Could you attach the receipt for yesterday’s courier charge? We need it for reconciliation.","urgency":"normal" },
+  { "id":"E1004","sender":"CEO","subject":"Client on-site","bodyTarget":"Please prepare the conference room and print 8 copies of the agenda for the 10am meeting.","urgency":"urgent" },
+  { "id":"E1005","sender":"IT","subject":"Password reset","bodyTarget":"We reset your printer password. Please log out, log back in, and test a single-page print.","urgency":"low" },
+  { "id":"E1006","sender":"Ops","subject":"Delivery window","bodyTarget":"Heads up: the paper shipment arrives between 1–3pm. Please notify reception and clear the loading bay.","urgency":"normal" },
+  { "id":"E1007","sender":"Legal","subject":"NDA on file","bodyTarget":"We need a signed NDA before sharing the draft. Please send the pre-filled copy to the vendor.","urgency":"urgent" },
+  { "id":"E1008","sender":"Sales","subject":"Room booking","bodyTarget":"Can you move the 2pm to Room C and add a video link? We have a last-minute visitor in Room A.","urgency":"normal" },
+  { "id":"E1009","sender":"Team Leads","subject":"Standup moved","bodyTarget":"Today’s standup is at 9:45 in the lounge. Please notify anyone who might miss the calendar update.","urgency":"low" },
+  { "id":"E1010","sender":"Vendor","subject":"Invoice copy","bodyTarget":"Attached is the revised invoice. Please confirm receipt and route it to Accounts Payable today.","urgency":"normal" },
+
+  { "id":"E1011","sender":"Reception","subject":"Visitor badges","bodyTarget":"We’re out of visitor badges. Please place a rush order for 200 and send confirmation to reception.","urgency":"urgent" },
+  { "id":"E1012","sender":"Design","subject":"Poster print","bodyTarget":"Please print the A3 posters on glossy and mount them in the hallway frames before lunch.","urgency":"normal" },
+  { "id":"E1013","sender":"Security","subject":"Door access","bodyTarget":"Grant temporary access to the contractors for floors 2 and 3, valid through Friday at 6pm.","urgency":"urgent" },
+  { "id":"E1014","sender":"Recruiting","subject":"Interview kit","bodyTarget":"Please assemble the interview packets and leave them in Room B by 1pm. Thanks!","urgency":"normal" },
+  { "id":"E1015","sender":"Events","subject":"Snacks restock","bodyTarget":"Could you restock snacks for the meetup tonight? Expect 30 attendees; label the allergen-free items.","urgency":"normal" },
+  { "id":"E1016","sender":"Accounting","subject":"Card decline","bodyTarget":"A corporate card was declined this morning. Please verify the limit and rerun the transaction.","urgency":"urgent" },
+  { "id":"E1017","sender":"People Ops","subject":"Anniversary note","bodyTarget":"Please draft a quick anniversary note for Kim (5 years) and schedule delivery at 4pm.","urgency":"low" },
+  { "id":"E1018","sender":"All Hands","subject":"Q&A deck","bodyTarget":"Please collect Q&A questions in one doc and send the deck to the exec team by end of day.","urgency":"normal" },
+  { "id":"E1019","sender":"Office","subject":"Plants day","bodyTarget":"Plant care is tomorrow morning. Please place the hallway plants on trays near sunlight.","urgency":"low" },
+  { "id":"E1020","sender":"Support","subject":"Return label","bodyTarget":"Please generate a return label for order #5412 and email it to the customer before noon.","urgency":"urgent" },
+
+  { "id":"E1021","sender":"Catering","subject":"Lunch counts","bodyTarget":"Final headcount is 18. Please confirm the vegetarian and gluten-free options with the vendor.","urgency":"normal" },
+  { "id":"E1022","sender":"Facilities","subject":"HVAC check","bodyTarget":"The 4th floor is warm. Please open a ticket and note the temperature in the request.","urgency":"normal" },
+  { "id":"E1023","sender":"Travel","subject":"Itinerary change","bodyTarget":"Flight moved to 6:20pm. Please update the calendar and notify pickup about the new arrival time.","urgency":"urgent" },
+  { "id":"E1024","sender":"Procurement","subject":"PO follow-up","bodyTarget":"Please follow up on PO-3387 and confirm the expected ship date with the supplier.","urgency":"normal" }
+]
