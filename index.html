@@ -1,151 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jim Fitz | That Fitz Guy</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #fdfdfd;
-      --primary: #1a73e8;
-      --text: #333;
-      --accent: #f57c00;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      text-align: center;
-      padding: 0 1rem;
-      background: linear-gradient(135deg, #1a73e8 0%, #673ab7 100%);
-      color: #fff;
-      transition: opacity 0.25s ease-out; /* smooth fade */
-    }
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>thatfitzguy — Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<meta name="description" content="Experiments, ideas, and projects by Jim Fitz.">
+<meta property="og:title" content="thatfitzguy">
+<meta property="og:description" content="Experiments, ideas, and projects by Jim Fitz.">
+<meta property="og:type" content="website">
+</head><body>
+<div data-include="/partials/header.html"></div>
 
-    header h1 {
-      font-size: clamp(2.5rem, 5vw, 4rem);
-      font-weight: 800;
-      margin-bottom: 0.5rem;
-    }
-    header p {
-      font-size: clamp(1.25rem, 3vw, 1.75rem);
-      opacity: 0.9;
-    }
-    .section {
-      padding: 4rem 1rem;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    .section h2 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-      color: var(--primary);
-    }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-    }
-    .card {
-      padding: 1.5rem;
-      border: 1px solid #e5e5e5;
-      border-radius: 12px;
-      transition: transform 0.2s ease, box-shadow 0.2s;
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    }
-    footer {
-      padding: 2rem 1rem;
-      text-align: center;
-      font-size: 0.9rem;
-      background: #fafafa;
-      border-top: 1px solid #e5e5e5;
-    }
-    a.button {
-      display: inline-block;
-      margin-top: 1rem;
-      padding: 0.75rem 1.5rem;
-      background: var(--accent);
-      color: #fff;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    a.button:hover {
-      opacity: 0.9;
-    }
-  </style>
-</head>
-<body>
-  <header id="hero">
-    <h1>Jim Fitz</h1>
-    <p>Thinker • Maker • Storyteller</p>
-    <a class="button" href="#contact">Get in touch</a>
-  </header>
-
-  <section class="section" id="about">
-    <h2>About Me</h2>
-    <p>Hello! I'm Jim Fitz, a multifaceted thinker, safety professional, and creative hobbyist. Whether I'm crafting intricate D&D campaigns, building 3D-printed terrain, or innovating safer workflows in manufacturing, I love turning ideas into reality. I have a history of obsession with VR, AI, 3D printing, and other emerging technology.</p>
-  </section>
-
-  <section class="section" id="projects">
-    <h2>Featured Projects</h2>
-    <div class="cards">
-      <article class="card">
-        <h3>Safety Culture Initiative</h3>
-        <p>A proactive safety culture framework adopted in multiple facilities to reduce incidents by 35%.</p>
-      </article>
-      <article class="card">
-        <h3>Duskmire D&D Setting</h3>
-        <p>A sprawling city setting inspired by New Orleans, complete with politics, vampires, and ghost-filled bayous.</p>
-      </article>
-      <article class="card">
-        <h3>3D-Printed Terrain Kits</h3>
-        <p>Modular dungeon tiles and miniatures sold via Etsy, helping DMs bring their tables to life.</p>
-      </article>
+<section class="hero">
+  <div class="container">
+    <h1>Hi, I'm Jim — <span style="opacity:.95">a thinker building playful tools</span></h1>
+    <p>Welcome to my little lab on the web. I prototype ideas and ship small, fun experiences. Check out recent experiments below.</p>
+    <div class="actions">
+      <a class="btn" href="/experiments.html">See Experiments</a>
+      <a class="btn" style="background:var(--brand)" href="/contact.html">Get in touch</a>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section class="section" id="contact">
-    <h2>Contact</h2>
-    <p>Interested in collaborating or just want to say hi? Drop me a line.</p>
-    <p><a href="mailto:jim@thejimfitz.com">jim@thejimfitz.com</a></p>
-  </section>
+<main class="container" style="padding:28px 0 48px">
+  <div class="card-grid">
+    <article class="card">
+      <h3>ArtGuesser</h3>
+      <p>Guess which museum holds a work of art; then watch the map reveal and learn more.</p>
+      <a class="btn mt-3" href="/artguesser.html">Play ArtGuesser</a>
+    </article>
+    <article class="card">
+      <h3>New experiment</h3>
+      <p>Placeholder for your next idea. We’ll link it here when you’re ready.</p>
+      <a class="btn mt-3" href="/experiments.html">Explore</a>
+    </article>
+  </div>
+</main>
 
-  <footer>
-    © 2025 Jim Fitz – Built with ❤️ and ☕
-  </footer>
-
-  <script>
-    // Fade the hero relative to total scrollable height so it always hits 0 at the bottom
-    (function() {
-      const hero = document.getElementById('hero');
-      function updateOpacity() {
-        const scrollY = window.scrollY;
-        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-        const opacity = Math.max(0, 1 - scrollY / maxScroll);
-        hero.style.opacity = opacity;
-      }
-      window.addEventListener('scroll', updateOpacity, { passive: true });
-      window.addEventListener('resize', updateOpacity);
-      updateOpacity(); // initialize on load
-    })();
-  </script>
-  <!-- __DATASET__ -->
-</body>
-</html>
-
+<div data-include="/partials/footer.html"></div>
+<script src="/assets/site.js" defer></script>
+</body></html>
