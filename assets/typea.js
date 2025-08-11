@@ -6,9 +6,10 @@ const elWpm = $('wpm'), elAcc = $('acc'), elDone = $('done'), elStress = $('stre
 const overlay = $('overlay'), ovWpm = $('ovWpm'), ovAcc = $('ovAcc'), ovDone = $('ovDone');
 
 const DIFF = {
-  intern:  { spawnMs:[5200,9000], dueRange:[24000,34000], queueMax:4 },
-  manager: { spawnMs:[3800,7200], dueRange:[18000,28000], queueMax:5 },
-  director:{ spawnMs:[2500,5200], dueRange:[12000,22000], queueMax:6 }
+  // Slower pacing + longer deadlines
+  intern:  { spawnMs:[8000,13000], dueRange:[45000,65000], queueMax:4 },
+  manager: { spawnMs:[6500,11000], dueRange:[36000,54000], queueMax:5 },
+  director:{ spawnMs:[5000,9000],  dueRange:[26000,42000], queueMax:6 }
 };
 
 let emailsPool = [];
@@ -31,13 +32,11 @@ let state = {
 const rnd = (min,max)=>Math.floor(Math.random()*(max-min+1))+min;
 const now = ()=>performance.now();
 
-// Load seed emails
 async function loadPool(){
   const res = await fetch('assets/typea-emails.json', { cache:'no-store' });
   emailsPool = await res.json();
 }
 
-// Spawn a new email from pool with difficulty timers
 function spawnEmail(){
   if (!emailsPool.length) return;
   const { dueRange, queueMax } = DIFF[state.diffKey];
@@ -49,7 +48,8 @@ function spawnEmail(){
   const dueAt = now() + dueMs;
   const email = {
     id, sender: src.sender, subject: src.subject,
-    urgency: src.urgency || 'normal',
+    // keep original urgency as a hint, but we'll compute it dynamically from time left
+    baseUrgency: src.urgency || 'normal',
     body: src.bodyTarget,
     dueAt, dueMs,
     typed: '',
@@ -60,7 +60,6 @@ function spawnEmail(){
   renderInbox();
 }
 
-// Master spawn loop
 function scheduleSpawns(){
   clearTimeout(state.spawnTimer);
   const [a,b] = DIFF[state.diffKey].spawnMs;
@@ -68,17 +67,36 @@ function scheduleSpawns(){
   state.spawnTimer = setTimeout(()=>{ spawnEmail(); scheduleSpawns(); }, delay);
 }
 
-// Select an email by id
+// === Dynamic urgency from time remaining ===
+function urgencyFromRemaining(rem, dueMs){
+  const r = Math.max(0, rem) / Math.max(1, dueMs);
+  if (r <= 0.25) return 'urgent';   // last quarter
+  if (r <= 0.60) return 'normal';   // middle
+  return 'low';                     // early
+}
+function ringColorFor(u){
+  return u==='urgent' ? '#e53935' : (u==='low' ? '#2f9e44' : '#f7b500');
+}
+function setMetaUrg(u){
+  elUrg.textContent = u[0].toUpperCase()+u.slice(1);
+  elUrg.className = 'badge ' + (u==='urgent'?'urgent': (u==='low'?'low':''));
+}
+
 function selectEmail(id){
   const e = state.queue.find(x=>x.id===id);
   state.activeId = id;
   if (e && !e.startedTypingAt) e.startedTypingAt = now();
   elSender.textContent = e ? e.sender : '—';
   elSubject.textContent = e ? e.subject : 'Select an email';
-  elUrg.textContent = e ? (e.urgency[0].toUpperCase()+e.urgency.slice(1)) : '';
-  elUrg.className = 'badge ' + (e ? (e.urgency==='urgent'?'urgent':e.urgency==='low'?'low':'') : '');
   elGhost.textContent = e ? e.body : '';
   elInput.value = e ? e.typed : '';
+  // meta urgency from time remaining
+  if (e) {
+    const rem = Math.max(0, e.dueAt - now());
+    setMetaUrg(urgencyFromRemaining(rem, e.dueMs));
+  } else {
+    elUrg.textContent = ''; elUrg.className='badge';
+  }
   paintMask();
   renderInbox();
 }
@@ -87,16 +105,18 @@ function active(){
   return state.queue.find(x=>x.id===state.activeId) || null;
 }
 
-// Re-render inbox list & timers
 function renderInbox(){
   const items = state.queue
-    .map((e,i)=>{
+    .map((e)=>{
       const rem = Math.max(0, e.dueAt - now());
-      const p = Math.max(0, 1 - rem / e.dueMs); // 0..1 elapsed
-      const pct = Math.floor(p*100);
-      const ringColor = e.urgency==='urgent' ? '#e53935' : (e.urgency==='low' ? '#2f9e44' : '#f7b500');
+      const pElapsed = Math.max(0, 1 - rem / e.dueMs); // 0..1 elapsed
+      const pct = Math.floor(pElapsed*100);
+      const urg = urgencyFromRemaining(rem, e.dueMs);
+      const ringColor = ringColorFor(urg);
       const timeLeft = Math.ceil(rem/1000);
       const activeCls = e.id===state.activeId ? ' active' : '';
+      // Update header meta for the active email each render
+      if (e.id===state.activeId) setMetaUrg(urg);
       return `
         <div class="email${activeCls}" data-id="${e.id}">
           <div class="ring" style="--p:${pct};--ring-color:${ringColor}"><span>${timeLeft}</span></div>
@@ -104,34 +124,32 @@ function renderInbox(){
             <div class="sender">${e.sender}</div>
             <div class="subject ellipsis">${e.subject}</div>
           </div>
-          <span class="badge ${e.urgency==='urgent'?'urgent':e.urgency==='low'?'low':''}">${e.urgency}</span>
+          <span class="badge ${urg==='urgent'?'urgent':urg==='low'?'low':''}">${urg}</span>
         </div>`;
     }).join('');
   elInbox.innerHTML = items || `<div class="email" style="justify-content:center;color:#666">Inbox zero — nice.</div>`;
 }
 
-// Paint the typed mask (correct/err highlights) & live stats
+// === Only show typed overlay (no dark duplicate of remaining chars) ===
 function paintMask(){
   const e = active(); if (!e) { elMask.innerHTML=''; return; }
   const t = e.typed || '';
   const target = e.body;
-  // compute highlights
+
   let html = '';
+  const n = Math.min(t.length, target.length);
   let correct = 0;
-  for (let i=0;i<target.length;i++){
+
+  // Only render the portion the player has typed
+  for (let i=0;i<n;i++){
     const ch = target[i];
-    const typedCh = t[i];
-    if (typedCh == null){
-      html += '<span>' + escapeHtml(ch) + '</span>';
-    } else if (typedCh === ch){
-      html += '<span class="ok">' + escapeHtml(ch) + '</span>';
-      correct++;
-    } else {
-      html += '<span class="err">' + escapeHtml(ch) + '</span>';
-    }
+    const ok = t[i] === ch;
+    if (ok){ correct++; html += '<span class="ok">' + escapeHtml(ch) + '</span>'; }
+    else   { html += '<span class="err">' + escapeHtml(ch) + '</span>'; }
   }
   elMask.innerHTML = html;
-  // live WPM/accuracy
+
+  // live WPM/accuracy based on progress
   const elapsedMs = Math.max(1, now() - (e.startedTypingAt || now()));
   const wpm = ((t.length/5) / (elapsedMs/60000)) || 0;
   const acc = target.length ? (correct/target.length)*100 : 100;
@@ -167,7 +185,6 @@ function trySend(exactOnly=false){
     removeEmail(e.id);
     selectNext();
   } else {
-    // small nudge: flash textarea border?
     elInput.style.borderColor = '#ef476f';
     setTimeout(()=>elInput.style.borderColor='#e0e0e0', 150);
   }
@@ -190,7 +207,6 @@ function selectNext(dir=1){
 // Timers & escalation
 function tick(){
   const t = now();
-  // expire
   for (let i=state.queue.length-1; i>=0; i--){
     const e = state.queue[i];
     if (t >= e.dueAt){
@@ -216,7 +232,6 @@ function bumpStress(delta){
 function endGame(){
   cancelAnimationFrame(state.rafId);
   clearTimeout(state.spawnTimer);
-  // Session stats
   const avgWpm = state.totalTimeMs ? Math.round(((state.totalChars/5)/(state.totalTimeMs/60000))) : 0;
   const accPct = state.totalChars ? Math.round((state.correctChars/state.totalChars)*100) : 100;
   ovWpm.textContent = avgWpm;
@@ -225,15 +240,13 @@ function endGame(){
   overlay.classList.add('active');
 }
 
-function updateHud(){
-  // already updated per keystroke; keep for future extensibility
-}
+function updateHud(){ /* reserved for future */ }
 
 // Keyboard controls
 window.addEventListener('keydown', (e)=>{
-  // numbers 1–6 pick slot
-  if (e.key >= '1' && e.key <= '6'){
-    const idx = Number(e.key)-1;
+  // F1–F6 pick slot (free number keys for typing)
+  if (/^F[1-6]$/.test(e.key)){
+    const idx = Number(e.key.slice(1)) - 1;
     if (state.queue[idx]) { selectEmail(state.queue[idx].id); e.preventDefault(); }
     return;
   }
@@ -249,7 +262,7 @@ window.addEventListener('keydown', (e)=>{
   }
 });
 
-// Click select
+// Click select (already supported)
 elInbox.addEventListener('click', (e)=>{
   const item = e.target.closest('.email');
   if (!item) return;
@@ -296,5 +309,4 @@ async function startGame(){
   elInput.focus();
 }
 
-// Kick off
 startGame();
