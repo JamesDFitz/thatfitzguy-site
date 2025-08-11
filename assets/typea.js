@@ -499,14 +499,25 @@ function finishCalibration(){
 
 function showDayComplete(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
+
   const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
   const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
-  $('overlay')?.querySelector('h3').textContent=`Day ${state.day} complete 🎯`;
-  $('overlay')?.querySelector('p').textContent=`Nice work. You cleared ${dayGoalFor()} emails. Ready for tomorrow?`;
-  if (ovWpm) ovWpm.textContent=avgWpm; if (ovAcc) ovAcc.textContent=accPct+'%'; if (ovDone) ovDone.textContent=state.resolved;
-  btnOverlayRestart.textContent='Next Day';
-  overlay?.classList.add('active');
+
+  const ov = $('overlay');
+  if (ov) {
+    const h3 = ov.querySelector('h3');
+    const p  = ov.querySelector('p');
+    if (h3) h3.textContent = `Day ${state.day} complete 🎯`;
+    if (p)  p.textContent  = `Nice work. You cleared ${dayGoalFor()} emails. Ready for tomorrow?`;
+  }
+  if (ovWpm)  ovWpm.textContent  = String(avgWpm);
+  if (ovAcc)  ovAcc.textContent  = accPct + '%';
+  if (ovDone) ovDone.textContent = String(state.resolved);
+
+  if (btnOverlayRestart) btnOverlayRestart.textContent = 'Next Day';
+  ov?.classList.add('active');
 }
+
 function checkDayProgress(){
   if (state.resolvedToday >= dayGoalFor()){
     if (state.day===1) finishCalibration();
@@ -564,14 +575,25 @@ function tick(){
 }
 function endGame(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
+
   const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
   const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
-  $('overlay')?.querySelector('h3').textContent='Burnout 💥';
-  $('overlay')?.querySelector('p').textContent='You pushed it too hard. Take a breath and try again.';
-  if (ovWpm) ovWpm.textContent=avgWpm; if (ovAcc) ovAcc.textContent=accPct+'%'; if (ovDone) ovDone.textContent=state.resolved;
-  btnOverlayRestart.textContent='Restart';
-  overlay?.classList.add('active');
+
+  const ov = $('overlay');
+  if (ov) {
+    const h3 = ov.querySelector('h3');
+    const p  = ov.querySelector('p');
+    if (h3) h3.textContent = 'Burnout 💥';
+    if (p)  p.textContent  = 'You pushed it too hard. Take a breath and try again.';
+  }
+  if (ovWpm)  ovWpm.textContent  = String(avgWpm);
+  if (ovAcc)  ovAcc.textContent  = accPct + '%';
+  if (ovDone) ovDone.textContent = String(state.resolved);
+
+  if (btnOverlayRestart) btnOverlayRestart.textContent = 'Restart';
+  ov?.classList.add('active');
 }
+
 function bumpStress(d){ state.stress=Math.max(0,Math.min(100,state.stress+d)); if (elStress) elStress.style.width=state.stress+'%'; }
 
 /* ---------- Events ---------- */
