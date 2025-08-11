@@ -81,6 +81,37 @@ a:hover{text-decoration:underline}
 .pill { background:#eef2ff; color:#1e3a8a; padding:.25rem .6rem; border-radius:999px; font-weight:600; margin-left:.5rem; }
 .pill--cal { background:#fff7ed; color:#9a3412; }
 
+/* Power bar */
+.powerbar { display:flex; gap:.5rem; margin-left:auto; align-items:center; }
+.powerbar .btn-sm { padding:.35rem .7rem; border-radius:8px; background:#1a73e8; color:#fff; border:0; cursor:pointer; }
+.powerbar .btn-sm[disabled] { opacity:.5; cursor:not-allowed; }
+.powerbar .btn-sm.active { outline:2px solid #ffa94d; }
+.powerbar .count { background:#00000012; padding:.05rem .35rem; border-radius:6px; margin-left:.25rem; }
+
+/* Staff row */
+.staffrow { display:flex; gap:.6rem; flex-wrap:wrap; margin-top:.6rem; }
+.staff { border:1px solid #e6e8ef; border-radius:10px; padding:.5rem .6rem; min-width:140px; background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.staff.busy { border-color:#ffd8a8; background:#fff8ea; }
+.staff .name { font-weight:700; }
+.staff .meta { font-size:.85rem; color:#666; margin:.15rem 0 .35rem; }
+.btn-xs { font-size:.8rem; padding:.25rem .5rem; border-radius:6px; border:0; background:#1a73e8; color:#fff; cursor:pointer; }
+.btn-xs[disabled]{ opacity:.6; cursor:not-allowed; }
+
+/* Delegation tag in inbox */
+.delegated { color:#1a73e8; font-weight:600; }
+
+/* Intro overlay additions */
+.intro-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; opacity:0; pointer-events:none; transition:opacity .25s; }
+.intro-overlay.active { opacity:1; pointer-events:auto; }
+.intro-card { background:#fff; max-width:720px; padding:1.25rem 1.25rem 1rem; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.15); }
+.intro-card h3 { margin:0 0 .5rem; font-size:1.25rem; }
+.intro-card h4 { margin:.6rem 0 .25rem; font-size:1rem; }
+.intro-card p { margin:0 0 .6rem; color:#444; }
+.intro-card .btn { background:#1a73e8; color:#fff; border:none; border-radius:8px; padding:.6rem 1.2rem; cursor:pointer; }
+.intro-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:.5rem 0 .8rem; }
+.intro-grid ul { margin:.1rem 0; padding-left:1.1rem; }
+
+
 /* Intro overlay */
 .intro-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; opacity:0; pointer-events:none; transition:opacity .25s; }
 .intro-overlay.active { opacity:1; pointer-events:auto; }
