@@ -7,8 +7,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <!-- Shared site styles -->
+  <link rel="stylesheet" href="assets/site.css" />
+  <!-- Leaflet styles -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="/assets/site.css" />
   <style>
     :root{--bg:#fff;--text:#333;--pri:#1a73e8;--accent:#f57c00}
     *{margin:0;padding:0;box-sizing:border-box}
@@ -24,17 +26,28 @@
     #info .actual{font-weight:600}
     button,.btn{margin-top:1rem;padding:.7rem 1.4rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
     [hidden]{display:none !important}
-    /* marker drop using margin (not transform) so Leaflet positioning stays correct */
-    @keyframes drop{0%{margin-top:-101px;opacity:0}70%{margin-top:-33px;opacity:1}85%{margin-top:-45px}100%{margin-top:-41px}}
-    .leaflet-marker-icon.drop{animation:drop .6s ease-out}
+
+    /* Pin drop animation (margin-based so Leaflet's transform stays intact) */
+    @keyframes drop{
+      /* Anchor is 41px; bounce to -41px */
+      0%   { margin-top:-101px; opacity:0; } /* -41 - 60 */
+      70%  { margin-top:-33px;  opacity:1; }
+      85%  { margin-top:-45px; }
+      100% { margin-top:-41px; }
+    }
+    .leaflet-marker-icon.drop { animation: drop .6s ease-out; }
+
+    /* Lightbox */
     #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity .3s}
     #lightbox.active{opacity:1;pointer-events:auto}
     #lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;transition:transform .2s ease-out}
   </style>
 </head>
 <body>
-  <div data-include="/partials/header.html"></div>
+  <!-- Shared header/nav -->
+  <div data-include="partials/header.html"></div>
 
+  <!-- Page header (your original) -->
   <header>
     <h1>ArtGuesser 🎨🌍</h1>
     <div id="controls">
@@ -62,8 +75,8 @@
     /* ---------- Load dataset embedded by Worker ---------- */
     let works=[], famousList=[];
     try{
-      const raw=document.getElementById('dataset')?.textContent;
-      const data=raw?JSON.parse(raw):{};
+      const raw=document.getElementById('dataset').textContent;
+      const data=JSON.parse(raw||'{}');
       works=data.results?.bindings.map(b=>({
         title:b.itemLabel.value,
         artist:b.artistLabel.value,
@@ -85,9 +98,11 @@
     lightImg.addEventListener('wheel',e=>{e.preventDefault();const delta=e.deltaY<0?0.15:-0.15;scale=Math.min(Math.max(0.5,scale+delta),6);const rect=lightImg.getBoundingClientRect();const x=((e.clientX-rect.left)/rect.width)*100;const y=((e.clientY-rect.top)/rect.height)*100;lightImg.style.transformOrigin=`${x}% ${y}%`;lightImg.style.transform=`scale(${scale})`;},{passive:false});
     lightImg.addEventListener('dblclick',()=>{scale=1;lightImg.style.transform='scale(1)'});
 
-    /* ---------- Controls + Prefetch ---------- */
+    /* ---------- Controls ---------- */
     let famousOnly = true;
     famousChk.addEventListener('change',()=>{ famousOnly = famousChk.checked; loadWork(); });
+
+    /* Prefetch next artwork */
     const rand = a => a[Math.floor(Math.random()*a.length)];
     let nextCandidate = null;
     const preloader = new Image();
@@ -95,7 +110,7 @@
       const arr = (famousOnly && famousList.length) ? famousList : works;
       if (!arr.length) return null;
       nextCandidate = rand(arr);
-      preloader.src = nextCandidate.img;
+      preloader.src = nextCandidate.img; // background download
       return nextCandidate;
     };
 
@@ -108,7 +123,7 @@
     const map=L.map('map').setView([20,0],2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
     let uMark,aMark,line,current;
-    const geoCache = new Map();
+    const geoCache = new Map(); // key: "lat,lon" rounded
 
     const resetMarkers=()=>{[uMark,aMark,line].forEach(m=>m&&map.removeLayer(m));uMark=aMark=line=null;};
 
@@ -117,9 +132,11 @@
       if(!arr.length){err.textContent='No artworks available.';return;}
       resetMarkers(); map.flyTo([20,0],2,{duration:1});
       img.hidden=true; loading.hidden=false; info.textContent=''; next.hidden=true;
+
       if(!nextCandidate) pickNext();
       current = nextCandidate;
-      pickNext();
+      pickNext(); // prefetch the following one immediately
+
       img.src=current.img;
       img.alt=`${current.title} by ${current.artist}`;
       img.onload=()=>{loading.hidden=true;img.hidden=false;info.textContent='Click where you think this masterpiece lives.'};
@@ -133,49 +150,69 @@
         line = L.polyline([[lat,lng]], { color:'red', weight:3 }).addTo(map);
         const start = [lat,lng], dest = [current.lat,current.lng];
 
-        // Bezier arc path
+        // Quadratic Bezier arc in lat/lon space
         const dLat = dest[0]-start[0], dLon = dest[1]-start[1];
         const mid  = [ (start[0]+dest[0])/2, (start[1]+dest[1])/2 ];
         const perp = [ -dLon, dLat ];
         const plen = Math.hypot(perp[0], perp[1]) || 1;
         const p    = [ perp[0]/plen, perp[1]/plen ];
-        const mag  = 0.3 * Math.hypot(dLat, dLon);
+        const mag  = 0.3 * Math.hypot(dLat, dLon); // arc height
         const ctrl = [ mid[0]+p[0]*mag, mid[1]+p[1]*mag ];
+
         const frames = 60;
         const curvePts = Array.from({length:frames+1}, (_,i)=>{
-          const t=i/frames, omt=1-t;
-          const latp=omt*omt*start[0]+2*omt*t*ctrl[0]+t*t*dest[0];
-          const lonp=omt*omt*start[1]+2*omt*t*ctrl[1]+t*t*dest[1];
-          return [latp,lonp];
+          const t = i/frames, omt=1-t;
+          const latp = omt*omt*start[0] + 2*omt*t*ctrl[0] + t*t*dest[0];
+          const lonp = omt*omt*start[1] + 2*omt*t*ctrl[1] + t*t*dest[1];
+          return [latp, lonp];
         });
 
         let f=0;
-        const tmr=setInterval(()=>{
-          f++; line.setLatLngs(curvePts.slice(0,f+1));
-          if(f===frames){
+        const tmr = setInterval(()=>{
+          f++;
+          line.setLatLngs(curvePts.slice(0, f+1));
+          if (f===frames) {
             clearInterval(tmr);
-            aMark=L.marker(dest,{icon:destIcon}).addTo(map);aMark._icon.classList.add('drop');
+            aMark = L.marker(dest, { icon: destIcon }).addTo(map);
+            aMark._icon.classList.add('drop');
 
-            // Distance + info panel + Learn More
-            const km=hav(lat,lng,dest[0],dest[1]).toFixed(0);
-            let html=`You were <strong>${km} km</strong> away.<br><span class='actual'>${current.museum}</span><br><em>${current.title}</em> by ${current.artist}`+
-                     `<br><a class='btn' href='https://www.google.com/search?q=${encodeURIComponent(current.title+\" \"+current.artist)}&btnI=1' target='_blank' rel='noopener'>Learn&nbsp;More</a>`;
-            info.innerHTML=html;
+            // Distance + info panel (always include Learn More)
+            const km = hav(lat, lng, dest[0], dest[1]).toFixed(0);
+            let html = `You were <strong>${km} km</strong> away.<br><span class='actual'>${current.museum}</span><br><em>${current.title}</em> by ${current.artist}` +
+                       `<br><a class='btn' href='https://www.google.com/search?q=${encodeURIComponent(current.title + " " + current.artist)}&btnI=1' target='_blank' rel='noopener'>Learn&nbsp;More</a>`;
+            info.innerHTML = html;
 
-            // Reverse-geocode City/Country with tiny cache
-            const key=`${dest[0].toFixed(3)},${dest[1].toFixed(3)}`;
-            const apply=({city,country})=>{ if(city||country){ info.innerHTML=html.replace(current.museum,`${current.museum}, ${city}${city&&country?', ':''}${country}`); } };
-            if(geoCache.has(key)){ apply(geoCache.get(key)); }
-            else{
+            // Reverse-geocode museum coords to add City, Country (with tiny cache)
+            const key = `${dest[0].toFixed(3)},${dest[1].toFixed(3)}`;
+            const apply = ({ city, country }) => {
+              if (city || country) {
+                info.innerHTML = html.replace(
+                  current.museum,
+                  `${current.museum}, ${city}${city && country ? ', ' : ''}${country}`
+                );
+              }
+            };
+
+            if (geoCache.has(key)) {
+              apply(geoCache.get(key));
+            } else {
               fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${dest[0]}&lon=${dest[1]}&zoom=10&addressdetails=1`)
-                .then(r=>r.json())
-                .then(g=>{ const a=g.address||{}; const city=a.city||a.town||a.village||a.municipality||''; const country=a.country||''; const val={city,country}; geoCache.set(key,val); apply(val); })
-                .catch(()=>{});
+                .then(r => r.json())
+                .then(g => {
+                  const a = g.address || {};
+                  const city = a.city || a.town || a.village || a.municipality || '';
+                  const country = a.country || '';
+                  const val = { city, country };
+                  geoCache.set(key, val);
+                  apply(val);
+                })
+                .catch(() => {});
             }
 
-            next.hidden=false;
+            // Reveal Next button
+            next.hidden = false;
           }
-        },20);
+        }, 20);
       });
     });
 
@@ -183,7 +220,14 @@
     loadWork();
   });
   </script>
+
+  <!-- Shared footer -->
+  <div data-include="partials/footer.html"></div>
+
+  <!-- Worker injects dataset here -->
   <!-- __DATASET__ -->
-  <script src="/assets/site.js" defer></script>
+
+  <!-- Shared site JS (injects header/footer & sets active nav) -->
+  <script src="assets/site.js" defer></script>
 </body>
 </html>
