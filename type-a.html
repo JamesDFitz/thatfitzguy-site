@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Type A – A Typing Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css" />
+  <style>
+    /* Layout */
+    .game-wrap { max-width:1100px; margin:24px auto 48px; padding:0 16px; }
+    .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+    .toolbar .spacer { flex:1; }
+    .grid { display:grid; grid-template-columns: 360px 1fr; gap:16px; }
+    @media (max-width: 900px){ .grid { grid-template-columns:1fr; } }
+
+    /* Inbox */
+    .inbox { background:#fff; border:1px solid #e8e8e8; border-radius:12px; overflow:hidden; }
+    .inbox-header { padding:12px 14px; font-weight:700; border-bottom:1px solid #eee; background:#fafafa; }
+    .inbox-list { max-height:65vh; overflow:auto; }
+    .email { display:flex; gap:12px; padding:12px 14px; border-bottom:1px solid #f0f0f0; cursor:pointer; align-items:center; }
+    .email:last-child { border-bottom:0; }
+    .email:hover { background:#fafbff; }
+    .email.active { background:#eef4ff; }
+    .sender { font-weight:700; }
+    .subject { color:#555; }
+    .badge { font-size:.75rem; padding:.2rem .5rem; border-radius:999px; background:#eee; }
+    .badge.urgent { background:#ffe5e5; color:#a40000; }
+    .badge.low { background:#eef7ee; color:#2f6e2f; }
+
+    /* Timer ring */
+    .ring { width:28px; height:28px; border-radius:50%; background:
+      conic-gradient(var(--ring-color, #bbb) calc(var(--p,0)*1%), #ececec 0);
+      display:grid; place-items:center; flex:0 0 28px; }
+    .ring span { font-size:.70rem; color:#333; }
+
+    /* Composer */
+    .composer { background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:14px; display:flex; flex-direction:column; min-height:420px; }
+    .meta { display:flex; gap:8px; align-items:center; font-size:.9rem; color:#555; margin-bottom:8px; }
+    .target { position:relative; border:1px dashed #e5e5e5; border-radius:8px; padding:12px; min-height:96px; color:#9aa0a6; background:#fafafa; }
+    .target .typed-mask { position:absolute; inset:0; color:#111; }
+    .target .typed-mask .ok { color:#111; }
+    .target .typed-mask .err { background: #ffe7e7; color:#a40000; }
+    textarea.input { margin-top:10px; width:100%; min-height:130px; resize:vertical; padding:12px; border:1px solid #e0e0e0; border-radius:8px; font:16px/1.4 'Inter', system-ui, sans-serif; }
+    .hint { margin-top:8px; font-size:.85rem; color:#666; }
+
+    /* HUD */
+    .hud { margin-top:14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .pill { background:#f5f7fb; border:1px solid #e6ebf5; color:#334; padding:.4rem .7rem; border-radius:999px; font-weight:600; }
+    .stress { flex:1; height:10px; background:#f1f1f1; border-radius:999px; overflow:hidden; }
+    .stress > div { height:100%; width:0%; background:linear-gradient(90deg,#ffd166,#ef476f); transition:width .2s; }
+
+    /* Overlay */
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:9999; }
+    .overlay.active { display:flex; }
+    .dialog { background:#fff; border-radius:12px; padding:22px; max-width:520px; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,.15); }
+    .dialog h3 { margin:0 0 8px; }
+    .dialog p { color:#555; margin:6px 0; }
+  </style>
+</head>
+<body>
+  <div data-include="partials/header.html"></div>
+
+  <main class="game-wrap">
+    <div class="toolbar card">
+      <strong>Type A</strong>
+      <div class="spacer"></div>
+      <label>Difficulty
+        <select id="difficulty">
+          <option value="intern">Intern</option>
+          <option value="manager" selected>Manager</option>
+          <option value="director">Director</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="lenient" checked> Lenient send (≥95%)</label>
+      <button class="btn" id="restart">Restart</button>
+    </div>
+
+    <div class="grid">
+      <section class="inbox">
+        <div class="inbox-header">Inbox</div>
+        <div id="inbox" class="inbox-list"></div>
+      </section>
+
+      <section class="composer">
+        <div class="meta">
+          <span id="metaSender" class="sender">—</span> ·
+          <span id="metaSubject" class="subject">Select an email (Tab to cycle)</span>
+          <span class="badge" id="metaUrgency"></span>
+        </div>
+        <div class="target">
+          <div id="ghost"></div>
+          <div class="typed-mask" id="typedMask"></div>
+        </div>
+        <textarea class="input" id="input" placeholder="Start typing…"></textarea>
+        <div class="hint">Enter: send (exact). Ctrl/Cmd+Enter: send (lenient if enabled). Tab/Shift+Tab: switch. 1–6: quick select.</div>
+
+        <div class="hud">
+          <span class="pill">WPM: <span id="wpm">0</span></span>
+          <span class="pill">Accuracy: <span id="acc">100%</span></span>
+          <span class="pill">Resolved: <span id="done">0</span></span>
+          <div class="stress"><div id="stressBar"></div></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="dialog">
+      <h3>Burnout 💥</h3>
+      <p>You pushed it too hard. Take a breath and try again.</p>
+      <p><strong>Session</strong> — WPM: <span id="ovWpm">0</span> · Accuracy: <span id="ovAcc">0%</span> · Resolved: <span id="ovDone">0</span></p>
+      <button class="btn" id="overlayRestart">Restart</button>
+    </div>
+  </div>
+
+  <div data-include="partials/footer.html"></div>
+  <script src="assets/typea.js" type="module"></script>
+  <script src="assets/site.js" defer></script>
+</body>
+</html>
