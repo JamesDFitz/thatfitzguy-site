@@ -1,10 +1,11 @@
-// Type A — calibration, intro, day stats, power-ups, delegation
+// Type A — calibration, intro, day stats, power-ups, delegation, streak economy, tooltips, toasts
 const $ = (id) => document.getElementById(id);
 const elInbox = $('inbox'), elGhost = $('ghost'), elInput = $('input');
 const elSender = $('metaSender'), elSubject = $('metaSubject'), elUrg = $('metaUrgency');
 const elWpm = $('wpm'), elAcc = $('acc'), elDone = $('done'), elStress = $('stressBar');
 const overlay = $('overlay'), ovWpm = $('ovWpm'), ovAcc = $('ovAcc'), ovDone = $('ovDone');
 const btnOverlayRestart = $('overlayRestart');
+const powerEnabled = () => state.day > 1; // disabled in Orientation (Day 1)
 
 const DIFF = {
   intern:  { spawnMs:[9000,14000], targetWPM:35, queueMax:4, baseDayGoal:10 },
@@ -30,8 +31,14 @@ let state = {
   spawnTimer: null, rafId: 0,
 
   // power-ups
-  power: { auto: 2, oof: 2 }, // per-day
+  power: { auto: 2, oof: 2 }, // refilled each day
   selectingDelegate: false,
+
+  // streak economy
+  streak: 0,
+  streakMilestone: 0,  // how many times we passed 3,6,9,...
+  awardFlip: 0,        // alternate Auto (even) / OOF (odd)
+  justAuto: false,     // marks current send as auto-complete
 
   // staff
   staff: [] // {id,name,wpm,taskId:null,progress:0,assignedAt:0}
@@ -41,7 +48,27 @@ const STAFF_NAMES = ['Ava','Ben','Cara','Diego','Elle','Finn','Gus','Hana'];
 const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const now = ()=>performance.now();
 
-/* ---------- HUD pills ---------- */
+/* ---------- Toasts & tooltips scaffolding ---------- */
+function ensureToastContainer(){
+  if (document.getElementById('toasts')) return;
+  const box = document.createElement('div');
+  box.id = 'toasts';
+  box.className = 'toasts';
+  document.body.appendChild(box);
+}
+function showToast(msg){
+  ensureToastContainer();
+  const d = document.createElement('div');
+  d.className = 'toast';
+  d.textContent = msg;
+  document.getElementById('toasts').appendChild(d);
+  // animate + auto-remove
+  requestAnimationFrame(()=>d.classList.add('in'));
+  setTimeout(()=>d.classList.remove('in'), 2200);
+  setTimeout(()=>d.remove(), 2600);
+}
+
+/* ---------- HUD pills / power bar ---------- */
 function ensureHudBits(){
   const hud = document.querySelector('.hud');
   if (!hud) return {};
@@ -61,6 +88,15 @@ function ensureHudBits(){
     cal.id = 'calBadge';
     hud.insertBefore(cal, left);
   }
+  // Streak pill
+  let streak = document.getElementById('streakPill');
+  if (!streak){
+    streak = document.createElement('span');
+    streak.className = 'pill pill--streak';
+    streak.id = 'streakPill';
+    streak.setAttribute('data-tip','Earn a charge every 3 exact sends (no Auto/OOF/delegation)');
+    hud.insertBefore(streak, left);
+  }
   // Power bar
   let pbar = document.getElementById('powerBar');
   if (!pbar) {
@@ -68,9 +104,15 @@ function ensureHudBits(){
     pbar.id = 'powerBar';
     pbar.className = 'powerbar';
     pbar.innerHTML = `
-      <button id="pAuto" class="btn btn-sm">Auto-complete <span id="pAutoC" class="count"></span></button>
-      <button id="pDel" class="btn btn-sm">Delegate</button>
-      <button id="pOof" class="btn btn-sm">Send OOF <span id="pOofC" class="count"></span></button>`;
+      <button id="pAuto" class="btn btn-sm has-tip" data-tip="Finish current email · Shortcut: A">
+        Auto-complete <span id="pAutoC" class="count"></span>
+      </button>
+      <button id="pDel" class="btn btn-sm has-tip" data-tip="Pick a teammate to type this one">
+        Delegate
+      </button>
+      <button id="pOof" class="btn btn-sm has-tip" data-tip="+45s to deadline · Shortcut: O">
+        Send OOF <span id="pOofC" class="count"></span>
+      </button>`;
     hud.appendChild(pbar);
   }
   // Staff row
@@ -81,18 +123,19 @@ function ensureHudBits(){
     srow.className = 'staffrow';
     elInbox.parentElement.appendChild(srow);
   }
-  return { left: left, cal: cal, pbar: pbar, srow: srow };
+  return { left, cal, streak, pbar, srow };
 }
 function dayGoalFor(){ return state.day===1 ? 5 : (DIFF[state.diffKey].baseDayGoal + Math.max(0, state.day-2)); }
 function updatePills(){
-  const { left, cal } = ensureHudBits();
+  const { left, cal, streak } = ensureHudBits();
   if (left) left.textContent = `Left today: ${Math.max(0, dayGoalFor() - state.resolvedToday)}`;
   if (cal) { cal.hidden = state.day !== 1; cal.textContent = 'New-Hire Orientation'; }
+  if (streak) { streak.textContent = `Streak: ${state.streak}`; }
 }
 function renderPowerBar(){
   ensureHudBits();
   $('pAutoC').textContent = `x${state.power.auto}`;
-  $('pOofC').textContent = `x${state.power.oof}`;
+  $('pOofC').textContent  = `x${state.power.oof}`;
   $('pAuto').disabled = state.power.auto<=0 || !active() || isDelegated(active());
   $('pOof').disabled  = state.power.oof<=0  || !active();
   $('pDel').classList.toggle('active', state.selectingDelegate);
@@ -116,6 +159,7 @@ function ensureIntro(){
             <li><strong>Tab</strong>/<strong>Shift+Tab</strong>: next/prev email</li>
             <li><strong>Enter</strong>: send (exact)</li>
             <li><strong>Ctrl/Cmd+Enter</strong>: send (lenient)</li>
+            <li><strong>A</strong>/<strong>O</strong>/<strong>D</strong>: Auto / OOF / Delegate</li>
           </ul>
         </div>
         <div>
@@ -123,7 +167,8 @@ function ensureIntro(){
           <ul>
             <li><strong>Auto-complete</strong>: finishes current email</li>
             <li><strong>Delegate</strong>: assign to a teammate (they type at their WPM)</li>
-            <li><strong>Send OOF</strong>: adds extra time to the deadline</li>
+            <li><strong>Send OOF</strong>: +45s to the deadline</li>
+            <li><strong>Streaks</strong>: every 3 exact sends earns a charge (alternates Auto ↔ OOF)</li>
           </ul>
         </div>
       </div>
@@ -174,7 +219,7 @@ function spawnEmail(){
   const dueMs = deadlineMsFor(src.bodyTarget.length);
   const dueAt = now()+dueMs;
   const email={ id:`${src.id}-${Math.random().toString(36).slice(2,7)}`, sender:src.sender, subject:src.subject,
-    baseUrgency:src.urgency||'normal', body:src.bodyTarget, dueAt, dueMs, typed:'', firstKeyAt:0, delegatedTo:null };
+    baseUrgency:src.urgency||'normal', body:src.bodyTarget, dueAt, dueMs, typed:'', firstKeyAt:0, delegatedTo:null, usedOOF:0 };
   state.queue.push(email);
   if (!state.activeId) selectEmail(email.id);
   renderInbox();
@@ -201,12 +246,14 @@ function setMetaUrg(u){
 
 /* ---------- Staff ---------- */
 function unlockStaffForDay(){
-  // 1 staff on Day 1 (they can help in orientation), +1 per day up to 5
+  // 1 staff on Day 1, +1 per day up to 5
   const targetCount = Math.min(5, 1 + (state.day-1));
   while (state.staff.length < targetCount){
     const name = STAFF_NAMES[state.staff.length % STAFF_NAMES.length];
     const baseWpm = 35 + state.staff.length*8; // each new hire is faster
-    state.staff.push({ id:cryptoRandomId(), name, wpm:baseWpm, taskId:null, progress:0, assignedAt:0 });
+    const st = { id:cryptoRandomId(), name, wpm:baseWpm, taskId:null, progress:0, assignedAt:0 };
+    state.staff.push(st);
+    showToast(`Teammate unlocked: ${st.name} · ${st.wpm} WPM`);
   }
 }
 function cryptoRandomId(){ return Math.random().toString(36).slice(2,9); }
@@ -217,7 +264,7 @@ function renderStaff(){
     const working = !!st.taskId;
     const task = state.queue.find(x=>x.id===st.taskId);
     const pct = task ? Math.min(100, Math.floor((st.progress/(task.body.length||1))*100)) : 0;
-    return `<div class="staff ${working?'busy':''}" data-id="${st.id}">
+    return `<div class="staff ${working?'busy':''} has-tip" data-id="${st.id}" data-tip="${working?'Working…':'Click Assign to delegate current email'}">
       <div class="name">${st.name}</div>
       <div class="meta">${st.wpm} WPM ${working?`· ${pct}%`:''}</div>
       <button class="sAssign btn btn-xs" ${working?'disabled':''}>${working?'Working…':'Assign'}</button>
@@ -228,7 +275,6 @@ function delegateTo(staffId, emailId){
   const st = state.staff.find(s=>s.id===staffId); if (!st || st.taskId) return;
   const e = state.queue.find(x=>x.id===emailId); if (!e || isDelegated(e)) return;
   e.delegatedTo = staffId; st.taskId = emailId; st.progress = (e.typed||'').length; st.assignedAt = now();
-  // freeze player typing on this task
   if (state.activeId===emailId) { elInput.value=''; elInput.placeholder=`Delegated to ${st.name} — working…`; }
   renderInbox(); renderStaff();
 }
@@ -264,10 +310,12 @@ function renderInbox(){
     const timeLeft = Math.ceil(rem/1000);
     const activeCls = e.id===state.activeId ? ' active' : '';
     const who = e.delegatedTo ? state.staff.find(s=>s.id===e.delegatedTo)?.name : null;
-    const tag = who ? ` <span class="delegated">→ ${who}</span>` : ` <span style="color:#7a7a7a;font-size:.8rem">· ~${requiredWpmFor(e)} WPM</span>`;
+    const tag = who
+      ? ` <span class="delegated">→ ${who}</span>`
+      : ` <span style="color:#7a7a7a;font-size:.8rem">· ~${requiredWpmFor(e)} WPM</span>`;
     if (e.id===state.activeId) setMetaUrg(urg);
     return `
-      <div class="email${activeCls}" data-id="${e.id}">
+      <div class="email${activeCls} has-tip" data-id="${e.id}" data-tip="Time left: ${timeLeft}s">
         <div class="ring" style="--p:${pct};--ring-color:${ringColor}"><span>${timeLeft}</span></div>
         <div style="flex:1;min-width:0">
           <div class="sender">${e.sender}</div>
@@ -311,15 +359,39 @@ elInput.addEventListener('input', ()=>{
   e.typed = elInput.value;
   paintLine(e);
 });
+function handleSuccess({ exact, viaAuto, viaOOF, delegated }){
+  // streak logic
+  const qualifies = exact && !viaAuto && !viaOOF && !delegated;
+  if (qualifies){
+    state.streak++;
+    // Every 3 grants a charge; alternate types
+    const milestones = Math.floor(state.streak / 3);
+    if (milestones > state.streakMilestone){
+      state.streakMilestone = milestones;
+      if (state.awardFlip % 2 === 0){
+        state.power.auto = Math.min(5, state.power.auto + 1);
+        showToast('Streak reward: +1 Auto-complete');
+      } else {
+        state.power.oof  = Math.min(5, state.power.oof  + 1);
+        showToast('Streak reward: +1 Send OOF');
+      }
+      state.awardFlip++;
+      renderPowerBar();
+    }
+  } else {
+    state.streak = 0;
+    state.streakMilestone = 0;
+    state.awardFlip = state.awardFlip % 2; // keep alternation memory
+  }
+  updatePills();
+}
 function trySend(exactOnly=false){
   const e=active(); if(!e||isDelegated(e)) return;
   const t = e.typed||'', target=e.body;
   const tN = normalizeStr(t), tgtN = normalizeStr(target);
 
-  // exact: normalized strings must match
-  const exact = (tN === tgtN);
-
-  // character-accurate counts for whole target (prevents bogus 100%)
+  const exact = (tN === tgtN); // normalized exact match
+  // whole-target accuracy (for lenient mode)
   let correctCount = 0;
   for (let i=0;i<target.length;i++){
     const tc = tN[i] ?? '';
@@ -331,13 +403,16 @@ function trySend(exactOnly=false){
 
   const ok = exact || (!exactOnly && state.lenient && accWhole >= 0.95);
   if (ok){
-    // aggregate totals & day totals
+    // aggregate totals (day + lifetime)
     state.resolved++; state.resolvedToday++;
     state.totalChars += target.length; state.correctChars += correctCount; state.totalTimeMs += elapsed;
     state.dayChars += target.length;   state.dayCorrectChars += correctCount; state.dayTimeMs += elapsed;
 
     bumpStress(-8);
     removeEmail(e.id);
+    handleSuccess({ exact, viaAuto: state.justAuto, viaOOF: !!e.usedOOF, delegated:false });
+    state.justAuto = false;
+
     checkDayProgress();
     selectNext();
   } else {
@@ -358,15 +433,25 @@ function selectNext(dir=1){
 }
 
 /* ---------- Power-ups ---------- */
-function useAuto(){
+function useAuto(){ if(!powerEnabled()) return;
   const e=active(); if(!e||isDelegated(e)||state.power.auto<=0) return;
-  state.power.auto--; e.typed = e.body; if(!e.firstKeyAt) e.firstKeyAt=now()-500; paintLine(e); trySend(true); renderPowerBar();
+  state.power.auto--;
+  state.justAuto = true;
+  e.typed = e.body;
+  if(!e.firstKeyAt) e.firstKeyAt=now()-500;
+  paintLine(e);
+  trySend(true);
+  renderPowerBar();
 }
-function useOOF(){
+function useOOF(){ if(!powerEnabled()) return;
   const e=active(); if(!e||state.power.oof<=0) return;
-  state.power.oof--; e.dueAt += 45000; renderInbox(); renderPowerBar();
+  state.power.oof--;
+  e.dueAt += 45000;
+  e.usedOOF = (e.usedOOF||0) + 1;
+  showToast('OOF sent: +45s');
+  renderInbox(); renderPowerBar();
 }
-function beginDelegateMode(){
+function beginDelegateMode(){ if(!powerEnabled()) return;
   state.selectingDelegate = !state.selectingDelegate;
   renderPowerBar(); renderStaff();
 }
@@ -385,7 +470,6 @@ function finishCalibration(){
   DIFF.manager.targetWPM = Math.max(35, Math.round(base*1.00));
   DIFF.director.targetWPM= Math.max(45, Math.round(base*1.20));
 
-  // Summary (use day stats)
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
   const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
   const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
@@ -426,16 +510,18 @@ function tick(){
     e.typed = e.body.slice(0, Math.floor(st.progress));
     if (!e.firstKeyAt) e.firstKeyAt = st.assignedAt;
     if (e.typed.length >= e.body.length){
-      // staff completed → same accounting as player exact
-      const correctCount = e.body.length; // they type exact
+      // staff completed → exact
       const elapsed = Math.max(1, t - e.firstKeyAt);
       state.resolved++; state.resolvedToday++;
-      state.totalChars += e.body.length; state.correctChars += correctCount; state.totalTimeMs += elapsed;
-      state.dayChars += e.body.length;   state.dayCorrectChars += correctCount; state.dayTimeMs += elapsed;
+      state.totalChars += e.body.length; state.correctChars += e.body.length; state.totalTimeMs += elapsed;
+      state.dayChars += e.body.length;   state.dayCorrectChars += e.body.length; state.dayTimeMs += elapsed;
       bumpStress(-8);
       removeEmail(e.id);
       if (state.activeId===e.id) state.activeId=null;
       st.taskId=null; st.progress=0; st.assignedAt=0;
+      // streak resets (delegation doesn't count)
+      state.streak = 0; state.streakMilestone = 0;
+      updatePills();
       checkDayProgress();
     }
   }
@@ -454,6 +540,8 @@ function tick(){
       if (st){ st.taskId=null; st.progress=0; st.assignedAt=0; }
       state.queue.splice(i,1);
       if (e.id===state.activeId) state.activeId=null;
+      // streak breaks on miss
+      state.streak = 0; state.streakMilestone = 0;
     }
   }
   if (state.stress>=100){ endGame(); return; }
@@ -474,17 +562,46 @@ function bumpStress(d){ state.stress=Math.max(0,Math.min(100,state.stress+d)); e
 
 /* ---------- Events ---------- */
 window.addEventListener('keydown',(e)=>{
-  if (/^F[1-6]$/.test(e.key)){ const idx=Number(e.key.slice(1))-1; if(state.queue[idx]){ selectEmail(state.queue[idx].id); e.preventDefault(); } return; }
-  if (e.key==='Tab'){ e.preventDefault(); selectNext(e.shiftKey?-1:1); return; }
-  if (e.key==='Enter'){ if (e.ctrlKey||e.metaKey) trySend(false); else trySend(true); e.preventDefault(); return; }
-  if (e.key.toLowerCase()==='a'){ useAuto(); }
-  if (e.key.toLowerCase()==='o'){ useOOF(); }
-  if (e.key.toLowerCase()==='d'){ beginDelegateMode(); }
+  // F1–F6: select email 1..6
+  if (/^F[1-6]$/.test(e.key)){
+    const idx = Number(e.key.slice(1)) - 1;
+    if (state.queue[idx]){ selectEmail(state.queue[idx].id); e.preventDefault(); }
+    return;
+  }
+  // Tab navigation
+  if (e.key === 'Tab'){ e.preventDefault(); selectNext(e.shiftKey?-1:1); return; }
+  // Send
+  if (e.key === 'Enter'){ if (e.ctrlKey||e.metaKey) trySend(false); else trySend(true); e.preventDefault(); return; }
+
+  // F7/F8/F9 = Auto / OOF / Delegate  (only after Orientation)
+  if (e.key === 'F7'){ e.preventDefault(); if (powerEnabled()) useAuto(); return; }
+  if (e.key === 'F8'){ e.preventDefault(); if (powerEnabled()) useOOF();  return; }
+  if (e.key === 'F9'){ e.preventDefault(); if (powerEnabled()) beginDelegateMode(); return; }
 });
 elInbox.addEventListener('click',(e)=>{
-  const it=e.target.closest('.email'); if(!it) return;
-  selectEmail(it.dataset.id); elInput.focus();
+  const it = e.target.closest('.email');
+  if (!it) return;
+
+  // If Delegate mode is on, clicking an email delegates it to first free teammate.
+  if (state.selectingDelegate && powerEnabled()){
+    const free = state.staff.find(s => !s.taskId);
+    if (free){
+      delegateTo(free.id, it.dataset.id);
+      state.selectingDelegate = false;
+      renderPowerBar();
+      showToast(`Delegated to ${free.name}`);
+      e.preventDefault();
+      return;
+    }
+    // no free staff → just exit delegate mode
+    state.selectingDelegate = false; renderPowerBar();
+  }
+
+  // Normal behavior: select the email
+  selectEmail(it.dataset.id);
+  elInput.focus();
 });
+
 document.addEventListener('click',(e)=>{
   const btn = e.target.closest('#pAuto'); if(btn){ useAuto(); }
 });
@@ -508,11 +625,11 @@ btnOverlayRestart.addEventListener('click', ()=>{
   // Next Day
   state.day++; state.resolvedToday=0; state.dayChars=0; state.dayCorrectChars=0; state.dayTimeMs=0;
   state.queue.length=0; state.activeId=null;
+  state.streak=0; state.streakMilestone=0;
   // refresh per-day power-ups
   state.power = { auto: 2, oof: 2 };
   unlockStaffForDay();
   renderStaff(); renderPowerBar();
-  // gentle start
   spawnEmail(); startLoops(true);
 });
 
@@ -524,11 +641,14 @@ async function startGame(){
   state.resolved=0; state.resolvedToday=0;
   state.totalChars=0; state.correctChars=0; state.totalTimeMs=0;
   state.dayChars=0; state.dayCorrectChars=0; state.dayTimeMs=0;
-  state.day=1; state.power={auto:2,oof:2}; state.staff=[]; unlockStaffForDay();
+  state.day=1; state.power={auto:2,oof:2}; state.staff=[];
+  state.streak=0; state.streakMilestone=0; state.awardFlip=0; state.justAuto=false;
   DIFF.intern.targetWPM=35; DIFF.manager.targetWPM=55; DIFF.director.targetWPM=75;
+
   elStress.style.width='0%'; elDone.textContent='0'; elWpm.textContent='0'; elAcc.textContent='100%';
   overlay.classList.remove('active');
   const dd=$('difficulty'); if (dd) dd.value='intern';
+
   ensureHudBits(); renderStaff(); renderPowerBar();
   spawnEmail(); spawnEmail();
   renderInbox(); updatePills(); ensureIntro();
@@ -541,5 +661,36 @@ function startLoops(initial=false){
   cancelAnimationFrame(state.rafId);
   state.rafId = requestAnimationFrame(tick);
 }
+
+function renderPowerBar(){
+  ensureHudBits();
+  const bar = document.getElementById('powerBar');
+  if (bar) bar.style.display = powerEnabled() ? '' : 'none';
+  if (!powerEnabled()) return; // don’t touch counts/disabled if hidden
+  $('pAutoC').textContent = `x${state.power.auto}`;
+  $('pOofC').textContent  = `x${state.power.oof}`;
+  $('pAuto').disabled = state.power.auto<=0 || !active() || isDelegated(active());
+  $('pOof').disabled  = state.power.oof<=0  || !active();
+  $('pDel').classList.toggle('active', state.selectingDelegate);
+}
+
+function renderStaff(){
+  const { srow } = ensureHudBits();
+  if (srow) srow.style.display = powerEnabled() ? '' : 'none';
+  if (!powerEnabled()) return;
+  // existing staff card rendering...
+}
+function unlockStaffForDay(){
+  if (state.day < 2) return; // none in Orientation
+  const targetCount = Math.min(5, state.day - 1); // Day2=1, Day3=2, ...
+  while (state.staff.length < targetCount){
+    const name = STAFF_NAMES[state.staff.length % STAFF_NAMES.length];
+    const baseWpm = 35 + state.staff.length*8;
+    const st = { id:cryptoRandomId(), name, wpm:baseWpm, taskId:null, progress:0, assignedAt:0 };
+    state.staff.push(st);
+    showToast(`Teammate unlocked: ${st.name} · ${st.wpm} WPM`);
+  }
+}
+
 
 startGame();
