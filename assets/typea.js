@@ -474,19 +474,29 @@ function onStaffClick(staffId){
 function finishCalibration(){
   const personalWPM = state.dayTimeMs ? ((state.dayChars/5)/(state.dayTimeMs/60000)) : 50;
   const base = Math.max(25, Math.round(personalWPM*0.90));
-  DIFF.intern.targetWPM  = Math.max(25, Math.round(base*0.80));
-  DIFF.manager.targetWPM = Math.max(35, Math.round(base*1.00));
-  DIFF.director.targetWPM= Math.max(45, Math.round(base*1.20));
+  DIFF.intern.targetWPM   = Math.max(25, Math.round(base*0.80));
+  DIFF.manager.targetWPM  = Math.max(35, Math.round(base*1.00));
+  DIFF.director.targetWPM = Math.max(45, Math.round(base*1.20));
 
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
   const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
   const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
-  $('overlay')?.querySelector('h3').textContent='Orientation complete ✅';
-  $('overlay')?.querySelector('p').textContent=`Baseline ~${Math.round(personalWPM)} WPM. We’ll tailor your workload to match.`;
-  if (ovWpm) ovWpm.textContent=avgWpm; if (ovAcc) ovAcc.textContent=accPct+'%'; if (ovDone) ovDone.textContent=state.resolved;
-  btnOverlayRestart.textContent='Start Day 2';
-  overlay?.classList.add('active');
+
+  const ov = $('overlay');
+  if (ov) {
+    const h3 = ov.querySelector('h3');
+    const p  = ov.querySelector('p');
+    if (h3) h3.textContent = 'Orientation complete ✅';
+    if (p)  p.textContent  = `Baseline ~${Math.round(personalWPM)} WPM. We’ll tailor your workload to match.`;
+  }
+  if (ovWpm)  ovWpm.textContent  = String(avgWpm);
+  if (ovAcc)  ovAcc.textContent  = accPct + '%';
+  if (ovDone) ovDone.textContent = String(state.resolved);
+
+  if (btnOverlayRestart) btnOverlayRestart.textContent = 'Start Day 2';
+  ov?.classList.add('active');
 }
+
 function showDayComplete(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
   const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
@@ -616,9 +626,21 @@ document.addEventListener('click',(e)=>{
 });
 
 // Optional controls (guarded if not present)
-$('difficulty')?.addEventListener('change',(e)=>{ state.diffKey=e.target.value; });
-$('lenient')?.addEventListener('change',(e)=>{ state.lenient=e.target.checked; });
+$('difficulty')?.addEventListener('change', (e)=> { state.diffKey = e.target.value; });
+$('lenient')?.addEventListener('change',  (e)=> { state.lenient = e.target.checked; });
 $('restart')?.addEventListener('click', startGame);
+btnOverlayRestart?.addEventListener('click', () => {
+  $('overlay')?.classList.remove('active');
+  if (btnOverlayRestart.textContent.includes('Restart')) { startGame(); return; }
+  state.day++;
+  state.resolvedToday = 0; state.dayChars = 0; state.dayCorrectChars = 0; state.dayTimeMs = 0;
+  state.queue.length = 0; state.activeId = null;
+  state.streak = 0; state.streakMilestone = 0;
+  state.power = { auto: 2, oof: 2 };
+  unlockStaffForDay(); renderStaff(); renderPowerBar();
+  spawnEmail(); startLoops(true);
+});
+
 
 btnOverlayRestart?.addEventListener('click', ()=>{
   overlay?.classList.remove('active');
