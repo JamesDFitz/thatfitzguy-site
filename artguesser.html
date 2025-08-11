@@ -178,8 +178,10 @@
 
             // Distance + info panel (always include Learn More)
             const km = hav(lat, lng, dest[0], dest[1]).toFixed(0);
-            let html = `You were <strong>${km} km</strong> away.<br><span class='actual'>${current.museum}</span><br><em>${current.title}</em> by ${current.artist}` +
-                       `<br><a class='btn' href='https://www.google.com/search?q=${encodeURIComponent(current.title + " " + current.artist)}&btnI=1' target='_blank' rel='noopener'>Learn&nbsp;More</a>`;
+            let html = `You were <strong>${km} km</strong> away.<br><span class='actual'>${current.museum}</span><br><em>${current.title}</em> by ${current.artist}`;
+const q = encodeURIComponent(`${current.title} ${current.artist}`);
+html += `<br><a class='btn' href='https://duckduckgo.com/?q=!ducky+${q}' target='_blank' rel='noopener'>Learn&nbsp;More</a>`;
+
             info.innerHTML = html;
 
             // Reverse-geocode museum coords to add City, Country (with tiny cache)
