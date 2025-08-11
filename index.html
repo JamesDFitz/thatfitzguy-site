@@ -8,30 +8,39 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/site.css" />
+  <style>
+    /* Center the hero content */
+    .hero .container{display:flex;flex-direction:column;align-items:center;text-align:center}
+    .hero .actions{justify-content:center}
+
+    /* Card hover polish */
+    .card{transition:transform .2s ease, box-shadow .2s ease}
+    .card:hover{transform:translateY(-4px);box-shadow:0 10px 24px rgba(0,0,0,.08)}
+  </style>
 </head>
 <body>
   <!-- Shared header/nav -->
   <div data-include="partials/header.html"></div>
 
-  <!-- Hero (keeps your blue→purple gradient + CTA) -->
+  <!-- Your original hero, centered -->
   <section class="hero" style="background:linear-gradient(135deg,#1a73e8 0%,#673ab7 100%);">
     <div class="container">
       <h1>Jim Fitz</h1>
       <p>Thinker • Maker • Storyteller</p>
       <div class="actions">
-        <a class="btn" href="#contact">Get in touch</a>
+        <a class="btn" href="/contact.html">Get in touch</a>
       </div>
     </div>
   </section>
 
   <main class="container" style="padding:28px 0 48px">
-    <!-- About -->
+    <!-- About (verbiage unchanged) -->
     <section id="about" class="mt-4">
       <h2 style="margin:0 0 10px;color:var(--brand)">About Me</h2>
       <p>Hello! I'm Jim Fitz, a multifaceted thinker, safety professional, and creative hobbyist. Whether I'm crafting intricate D&amp;D campaigns, building 3D-printed terrain, or innovating safer workflows in manufacturing, I love turning ideas into reality. I have a history of obsession with VR, AI, 3D printing, and other emerging technology.</p>
     </section>
 
-    <!-- Featured Projects -->
+    <!-- Featured Projects (now includes ArtGuesser) -->
     <section id="projects" class="mt-4">
       <h2 style="margin:0 0 10px;color:var(--brand)">Featured Projects</h2>
       <div class="card-grid">
@@ -47,14 +56,12 @@
           <h3>3D-Printed Terrain Kits</h3>
           <p>Modular dungeon tiles and miniatures sold via Etsy, helping DMs bring their tables to life.</p>
         </article>
+        <article class="card">
+          <h3>ArtGuesser</h3>
+          <p>Guess which museum holds a work of art; then watch the map reveal and learn more.</p>
+          <a class="btn mt-3" href="/artguesser.html">Play ArtGuesser</a>
+        </article>
       </div>
-    </section>
-
-    <!-- Contact -->
-    <section id="contact" class="mt-4">
-      <h2 style="margin:0 0 10px;color:var(--brand)">Contact</h2>
-      <p>Interested in collaborating or just want to say hi? Drop me a line.</p>
-      <p><a href="mailto:jim@thejimfitz.com">jim@thejimfitz.com</a></p>
     </section>
   </main>
 
@@ -63,7 +70,7 @@
 
   <script src="assets/site.js" defer></script>
   <script>
-    // Keep your smooth hero fade, but make it relative to total page height
+    // Smooth hero fade (your original behavior)
     (function() {
       const hero = document.querySelector('.hero');
       function updateOpacity() {
