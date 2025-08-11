@@ -36,9 +36,9 @@ let state = {
 
   // streak economy
   streak: 0,
-  streakMilestone: 0,  // how many times we passed 3,6,9,...
-  awardFlip: 0,        // alternate Auto (even) / OOF (odd)
-  justAuto: false,     // marks current send as auto-complete
+  streakMilestone: 0,
+  awardFlip: 0,
+  justAuto: false,
 
   // staff
   staff: [] // {id,name,wpm,taskId:null,progress:0,assignedAt:0}
@@ -48,7 +48,7 @@ const STAFF_NAMES = ['Ava','Ben','Cara','Diego','Elle','Finn','Gus','Hana'];
 const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const now = ()=>performance.now();
 
-/* ---------- Toasts & tooltips scaffolding ---------- */
+/* ---------- Toasts ---------- */
 function ensureToastContainer(){
   if (document.getElementById('toasts')) return;
   const box = document.createElement('div');
@@ -62,23 +62,23 @@ function showToast(msg){
   d.className = 'toast';
   d.textContent = msg;
   document.getElementById('toasts').appendChild(d);
-  // animate + auto-remove
   requestAnimationFrame(()=>d.classList.add('in'));
   setTimeout(()=>d.classList.remove('in'), 2200);
   setTimeout(()=>d.remove(), 2600);
 }
 
-/* ---------- HUD pills / power bar ---------- */
+/* ---------- HUD / power bar ---------- */
 function ensureHudBits(){
   const hud = document.querySelector('.hud');
   if (!hud) return {};
+
   // Left-today pill
   let left = document.getElementById('leftToday');
   if (!left) {
     left = document.createElement('span');
     left.className = 'pill';
     left.id = 'leftToday';
-    hud.insertBefore(left, elStress.parentElement);
+    hud.insertBefore(left, elStress?.parentElement || null);
   }
   // Calibration badge
   let cal = document.getElementById('calBadge');
@@ -104,13 +104,13 @@ function ensureHudBits(){
     pbar.id = 'powerBar';
     pbar.className = 'powerbar';
     pbar.innerHTML = `
-      <button id="pAuto" class="btn btn-sm has-tip" data-tip="Finish current email · Shortcut: A">
+      <button id="pAuto" class="btn btn-sm has-tip" data-tip="Finish current email · Shortcut: F7">
         Auto-complete <span id="pAutoC" class="count"></span>
       </button>
-      <button id="pDel" class="btn btn-sm has-tip" data-tip="Pick a teammate to type this one">
+      <button id="pDel" class="btn btn-sm has-tip" data-tip="Toggle delegate mode · Shortcut: F9">
         Delegate
       </button>
-      <button id="pOof" class="btn btn-sm has-tip" data-tip="+45s to deadline · Shortcut: O">
+      <button id="pOof" class="btn btn-sm has-tip" data-tip="+45s to deadline · Shortcut: F8">
         Send OOF <span id="pOofC" class="count"></span>
       </button>`;
     hud.appendChild(pbar);
@@ -121,7 +121,7 @@ function ensureHudBits(){
     srow = document.createElement('div');
     srow.id = 'staffRow';
     srow.className = 'staffrow';
-    elInbox.parentElement.appendChild(srow);
+    elInbox?.parentElement?.appendChild(srow);
   }
   return { left, cal, streak, pbar, srow };
 }
@@ -134,11 +134,16 @@ function updatePills(){
 }
 function renderPowerBar(){
   ensureHudBits();
-  $('pAutoC').textContent = `x${state.power.auto}`;
-  $('pOofC').textContent  = `x${state.power.oof}`;
-  $('pAuto').disabled = state.power.auto<=0 || !active() || isDelegated(active());
-  $('pOof').disabled  = state.power.oof<=0  || !active();
-  $('pDel').classList.toggle('active', state.selectingDelegate);
+  const bar = document.getElementById('powerBar');
+  if (!bar) return;
+  bar.style.display = powerEnabled() ? '' : 'none';
+  if (!powerEnabled()) return;
+  const autoC = $('pAutoC'), oofC = $('pOofC'), btnAuto = $('pAuto'), btnOof = $('pOof'), btnDel = $('pDel');
+  if (autoC) autoC.textContent = `x${state.power.auto}`;
+  if (oofC)  oofC.textContent  = `x${state.power.oof}`;
+  if (btnAuto) btnAuto.disabled = state.power.auto<=0 || !active() || isDelegated(active());
+  if (btnOof)  btnOof.disabled  = state.power.oof<=0  || !active();
+  if (btnDel)  btnDel.classList.toggle('active', state.selectingDelegate);
 }
 
 /* ---------- Intro overlay ---------- */
@@ -159,7 +164,7 @@ function ensureIntro(){
             <li><strong>Tab</strong>/<strong>Shift+Tab</strong>: next/prev email</li>
             <li><strong>Enter</strong>: send (exact)</li>
             <li><strong>Ctrl/Cmd+Enter</strong>: send (lenient)</li>
-            <li><strong>A</strong>/<strong>O</strong>/<strong>D</strong>: Auto / OOF / Delegate</li>
+            <li><strong>F7 / F8 / F9</strong>: Auto / OOF / Delegate</li>
           </ul>
         </div>
         <div>
@@ -175,9 +180,9 @@ function ensureIntro(){
       <button id="introStart" class="btn">Start Orientation</button>
     </div>`;
   document.body.appendChild(div);
-  $('introStart').addEventListener('click', ()=>{
+  $('introStart')?.addEventListener('click', ()=>{
     div.classList.remove('active');
-    startLoops(); elInput.focus();
+    startLoops(); elInput?.focus();
   });
 }
 
@@ -240,26 +245,30 @@ function urgencyFromRemaining(rem,dueMs){
 }
 function ringColorFor(u){ return u==='urgent'?'#e53935':(u==='low'?'#2f9e44':'#f7b500'); }
 function setMetaUrg(u){
+  if (!elUrg) return;
   elUrg.textContent=u[0].toUpperCase()+u.slice(1);
   elUrg.className='badge '+(u==='urgent'?'urgent':(u==='low'?'low':''));
 }
 
 /* ---------- Staff ---------- */
+function cryptoRandomId(){ return Math.random().toString(36).slice(2,9); }
 function unlockStaffForDay(){
-  // 1 staff on Day 1, +1 per day up to 5
-  const targetCount = Math.min(5, 1 + (state.day-1));
+  if (state.day < 2) return; // none in Orientation
+  const targetCount = Math.min(5, state.day - 1); // Day2=1, Day3=2, ...
   while (state.staff.length < targetCount){
     const name = STAFF_NAMES[state.staff.length % STAFF_NAMES.length];
-    const baseWpm = 35 + state.staff.length*8; // each new hire is faster
+    const baseWpm = 35 + state.staff.length*8;
     const st = { id:cryptoRandomId(), name, wpm:baseWpm, taskId:null, progress:0, assignedAt:0 };
     state.staff.push(st);
     showToast(`Teammate unlocked: ${st.name} · ${st.wpm} WPM`);
   }
 }
-function cryptoRandomId(){ return Math.random().toString(36).slice(2,9); }
 function isDelegated(e){ return !!e?.delegatedTo; }
 function renderStaff(){
   const { srow } = ensureHudBits();
+  if (!srow) return;
+  srow.style.display = powerEnabled() ? '' : 'none';
+  if (!powerEnabled()) return;
   srow.innerHTML = state.staff.map(st=>{
     const working = !!st.taskId;
     const task = state.queue.find(x=>x.id===st.taskId);
@@ -275,7 +284,7 @@ function delegateTo(staffId, emailId){
   const st = state.staff.find(s=>s.id===staffId); if (!st || st.taskId) return;
   const e = state.queue.find(x=>x.id===emailId); if (!e || isDelegated(e)) return;
   e.delegatedTo = staffId; st.taskId = emailId; st.progress = (e.typed||'').length; st.assignedAt = now();
-  if (state.activeId===emailId) { elInput.value=''; elInput.placeholder=`Delegated to ${st.name} — working…`; }
+  if (state.activeId===emailId && elInput) { elInput.value=''; elInput.placeholder=`Delegated to ${st.name} — working…`; }
   renderInbox(); renderStaff();
 }
 
@@ -283,14 +292,16 @@ function delegateTo(staffId, emailId){
 function selectEmail(id){
   const e = state.queue.find(x=>x.id===id) || null;
   state.activeId = e ? e.id : null;
-  elSender.textContent = e ? e.sender : '—';
-  elSubject.textContent = e ? e.subject : 'Select an email';
-  elInput.disabled = e && isDelegated(e);
-  elInput.placeholder = e && isDelegated(e) ? 'Delegated — you cannot type this.' : '';
-  elInput.value = e ? (e.typed||'') : '';
+  if (elSender) elSender.textContent = e ? e.sender : '—';
+  if (elSubject) elSubject.textContent = e ? e.subject : 'Select an email';
+  if (elInput){
+    elInput.disabled = e && isDelegated(e);
+    elInput.placeholder = e && isDelegated(e) ? 'Delegated — you cannot type this.' : '';
+    elInput.value = e ? (e.typed||'') : '';
+  }
   paintLine(e);
   if (e){ const rem=Math.max(0,e.dueAt-now()); setMetaUrg(urgencyFromRemaining(rem,e.dueMs)); }
-  else { elUrg.textContent=''; elUrg.className='badge'; }
+  else if (elUrg){ elUrg.textContent=''; elUrg.className='badge'; }
   renderInbox(); renderPowerBar();
 }
 function active(){ return state.queue.find(x=>x.id===state.activeId)||null; }
@@ -302,6 +313,7 @@ function requiredWpmFor(e){
   return Math.max(0, Math.round(req/5)*5);
 }
 function renderInbox(){
+  if (!elInbox) return;
   const items = state.queue.map((e)=>{
     const rem = Math.max(0, e.dueAt-now());
     const pct = Math.floor(Math.max(0,1 - rem/e.dueMs)*100);
@@ -328,6 +340,7 @@ function renderInbox(){
   updatePills(); renderPowerBar();
 }
 function paintLine(e){
+  if (!elGhost) return;
   if (!e){ elGhost.innerHTML=''; return; }
   const t = e.typed||'', target = e.body;
   const n = Math.min(t.length, target.length);
@@ -342,29 +355,27 @@ function paintLine(e){
     }
   }
   elGhost.innerHTML = html;
-  if (!e.firstKeyAt || t.length===0){ elWpm.textContent='0'; elAcc.textContent='100%'; }
+  if (!e.firstKeyAt || t.length===0){ if(elWpm) elWpm.textContent='0'; if(elAcc) elAcc.textContent='100%'; }
   else {
     const elapsed = Math.max(1, now()-e.firstKeyAt);
     const grossWpm = ((t.length/5)/(elapsed/60000))||0;
-    elWpm.textContent = Math.round(grossWpm);
+    if (elWpm) elWpm.textContent = Math.round(grossWpm);
     const acc = n ? (correctSoFar/n)*100 : 100;
-    elAcc.textContent = Math.round(Math.max(0, Math.min(100, acc)))+'%';
+    if (elAcc) elAcc.textContent = Math.round(Math.max(0, Math.min(100, acc)))+'%';
   }
 }
 
 /* ---------- Input & send ---------- */
-elInput.addEventListener('input', ()=>{
+elInput?.addEventListener('input', ()=>{
   const e=active(); if(!e||isDelegated(e)) return;
   if (!e.firstKeyAt && elInput.value.length>0) e.firstKeyAt = now();
   e.typed = elInput.value;
   paintLine(e);
 });
 function handleSuccess({ exact, viaAuto, viaOOF, delegated }){
-  // streak logic
   const qualifies = exact && !viaAuto && !viaOOF && !delegated;
   if (qualifies){
     state.streak++;
-    // Every 3 grants a charge; alternate types
     const milestones = Math.floor(state.streak / 3);
     if (milestones > state.streakMilestone){
       state.streakMilestone = milestones;
@@ -381,7 +392,7 @@ function handleSuccess({ exact, viaAuto, viaOOF, delegated }){
   } else {
     state.streak = 0;
     state.streakMilestone = 0;
-    state.awardFlip = state.awardFlip % 2; // keep alternation memory
+    state.awardFlip = state.awardFlip % 2;
   }
   updatePills();
 }
@@ -390,8 +401,7 @@ function trySend(exactOnly=false){
   const t = e.typed||'', target=e.body;
   const tN = normalizeStr(t), tgtN = normalizeStr(target);
 
-  const exact = (tN === tgtN); // normalized exact match
-  // whole-target accuracy (for lenient mode)
+  const exact = (tN === tgtN);
   let correctCount = 0;
   for (let i=0;i<target.length;i++){
     const tc = tN[i] ?? '';
@@ -403,7 +413,6 @@ function trySend(exactOnly=false){
 
   const ok = exact || (!exactOnly && state.lenient && accWhole >= 0.95);
   if (ok){
-    // aggregate totals (day + lifetime)
     state.resolved++; state.resolvedToday++;
     state.totalChars += target.length; state.correctChars += correctCount; state.totalTimeMs += elapsed;
     state.dayChars += target.length;   state.dayCorrectChars += correctCount; state.dayTimeMs += elapsed;
@@ -416,8 +425,7 @@ function trySend(exactOnly=false){
     checkDayProgress();
     selectNext();
   } else {
-    elInput.style.borderColor='#ef476f';
-    setTimeout(()=>elInput.style.borderColor='#e0e0e0',150);
+    if (elInput){ elInput.style.borderColor='#ef476f'; setTimeout(()=>elInput.style.borderColor='#e0e0e0',150); }
   }
 }
 function removeEmail(id){
@@ -473,21 +481,21 @@ function finishCalibration(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
   const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
   const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
-  $('overlay').querySelector('h3').textContent='Orientation complete ✅';
-  $('overlay').querySelector('p').textContent=`Baseline ~${Math.round(personalWPM)} WPM. We’ll tailor your workload to match.`;
-  ovWpm.textContent=avgWpm; ovAcc.textContent=accPct+'%'; ovDone.textContent=state.resolved;
+  $('overlay')?.querySelector('h3').textContent='Orientation complete ✅';
+  $('overlay')?.querySelector('p').textContent=`Baseline ~${Math.round(personalWPM)} WPM. We’ll tailor your workload to match.`;
+  if (ovWpm) ovWpm.textContent=avgWpm; if (ovAcc) ovAcc.textContent=accPct+'%'; if (ovDone) ovDone.textContent=state.resolved;
   btnOverlayRestart.textContent='Start Day 2';
-  overlay.classList.add('active');
+  overlay?.classList.add('active');
 }
 function showDayComplete(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
   const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
   const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
-  $('overlay').querySelector('h3').textContent=`Day ${state.day} complete 🎯`;
-  $('overlay').querySelector('p').textContent=`Nice work. You cleared ${dayGoalFor()} emails. Ready for tomorrow?`;
-  ovWpm.textContent=avgWpm; ovAcc.textContent=accPct+'%'; ovDone.textContent=state.resolved;
+  $('overlay')?.querySelector('h3').textContent=`Day ${state.day} complete 🎯`;
+  $('overlay')?.querySelector('p').textContent=`Nice work. You cleared ${dayGoalFor()} emails. Ready for tomorrow?`;
+  if (ovWpm) ovWpm.textContent=avgWpm; if (ovAcc) ovAcc.textContent=accPct+'%'; if (ovDone) ovDone.textContent=state.resolved;
   btnOverlayRestart.textContent='Next Day';
-  overlay.classList.add('active');
+  overlay?.classList.add('active');
 }
 function checkDayProgress(){
   if (state.resolvedToday >= dayGoalFor()){
@@ -504,13 +512,12 @@ function tick(){
     if (!st.taskId) continue;
     const e = state.queue.find(x=>x.id===st.taskId);
     if (!e){ st.taskId=null; continue; }
-    const cps = (st.wpm*5)/60; // chars per second
-    const dt = 1/60; // approx per frame
+    const cps = (st.wpm*5)/60;
+    const dt = 1/60;
     st.progress = Math.min(e.body.length, st.progress + cps*dt);
     e.typed = e.body.slice(0, Math.floor(st.progress));
     if (!e.firstKeyAt) e.firstKeyAt = st.assignedAt;
     if (e.typed.length >= e.body.length){
-      // staff completed → exact
       const elapsed = Math.max(1, t - e.firstKeyAt);
       state.resolved++; state.resolvedToday++;
       state.totalChars += e.body.length; state.correctChars += e.body.length; state.totalTimeMs += elapsed;
@@ -519,7 +526,6 @@ function tick(){
       removeEmail(e.id);
       if (state.activeId===e.id) state.activeId=null;
       st.taskId=null; st.progress=0; st.assignedAt=0;
-      // streak resets (delegation doesn't count)
       state.streak = 0; state.streakMilestone = 0;
       updatePills();
       checkDayProgress();
@@ -530,17 +536,15 @@ function tick(){
   for (let i=state.queue.length-1;i>=0;i--){
     const e = state.queue[i];
     if (state.day===1){
-      if (t>=e.dueAt) e.dueAt = t + 10*60*1000; // extend forever in orientation
+      if (t>=e.dueAt) e.dueAt = t + 10*60*1000;
       continue;
     }
     if (t>=e.dueAt){
       bumpStress(15);
-      // unassign any staff
       const st = state.staff.find(s=>s.taskId===e.id);
       if (st){ st.taskId=null; st.progress=0; st.assignedAt=0; }
       state.queue.splice(i,1);
       if (e.id===state.activeId) state.activeId=null;
-      // streak breaks on miss
       state.streak = 0; state.streakMilestone = 0;
     }
   }
@@ -552,15 +556,17 @@ function endGame(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
   const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
   const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
-  $('overlay').querySelector('h3').textContent='Burnout 💥';
-  $('overlay').querySelector('p').textContent='You pushed it too hard. Take a breath and try again.';
-  ovWpm.textContent=avgWpm; ovAcc.textContent=accPct+'%'; ovDone.textContent=state.resolved;
+  $('overlay')?.querySelector('h3').textContent='Burnout 💥';
+  $('overlay')?.querySelector('p').textContent='You pushed it too hard. Take a breath and try again.';
+  if (ovWpm) ovWpm.textContent=avgWpm; if (ovAcc) ovAcc.textContent=accPct+'%'; if (ovDone) ovDone.textContent=state.resolved;
   btnOverlayRestart.textContent='Restart';
-  overlay.classList.add('active');
+  overlay?.classList.add('active');
 }
-function bumpStress(d){ state.stress=Math.max(0,Math.min(100,state.stress+d)); elStress.style.width=state.stress+'%'; }
+function bumpStress(d){ state.stress=Math.max(0,Math.min(100,state.stress+d)); if (elStress) elStress.style.width=state.stress+'%'; }
 
 /* ---------- Events ---------- */
+
+// Keyboard: F-keys only for actions
 window.addEventListener('keydown',(e)=>{
   // F1–F6: select email 1..6
   if (/^F[1-6]$/.test(e.key)){
@@ -572,17 +578,16 @@ window.addEventListener('keydown',(e)=>{
   if (e.key === 'Tab'){ e.preventDefault(); selectNext(e.shiftKey?-1:1); return; }
   // Send
   if (e.key === 'Enter'){ if (e.ctrlKey||e.metaKey) trySend(false); else trySend(true); e.preventDefault(); return; }
-
   // F7/F8/F9 = Auto / OOF / Delegate  (only after Orientation)
   if (e.key === 'F7'){ e.preventDefault(); if (powerEnabled()) useAuto(); return; }
   if (e.key === 'F8'){ e.preventDefault(); if (powerEnabled()) useOOF();  return; }
   if (e.key === 'F9'){ e.preventDefault(); if (powerEnabled()) beginDelegateMode(); return; }
 });
-elInbox.addEventListener('click',(e)=>{
+
+// Inbox click: normal select, or delegate-to-first-free if in delegate mode
+elInbox?.addEventListener('click',(e)=>{
   const it = e.target.closest('.email');
   if (!it) return;
-
-  // If Delegate mode is on, clicking an email delegates it to first free teammate.
   if (state.selectingDelegate && powerEnabled()){
     const free = state.staff.find(s => !s.taskId);
     if (free){
@@ -593,40 +598,35 @@ elInbox.addEventListener('click',(e)=>{
       e.preventDefault();
       return;
     }
-    // no free staff → just exit delegate mode
     state.selectingDelegate = false; renderPowerBar();
   }
-
-  // Normal behavior: select the email
   selectEmail(it.dataset.id);
-  elInput.focus();
+  elInput?.focus();
 });
 
-document.addEventListener('click',(e)=>{
-  const btn = e.target.closest('#pAuto'); if(btn){ useAuto(); }
-});
-document.addEventListener('click',(e)=>{
-  const btn = e.target.closest('#pOof'); if(btn){ useOOF(); }
-});
-document.addEventListener('click',(e)=>{
-  const btn = e.target.closest('#pDel'); if(btn){ beginDelegateMode(); }
-});
+// Power buttons
+document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pAuto'); if(btn){ useAuto(); }});
+document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pOof');  if(btn){ useOOF();  }});
+document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pDel');  if(btn){ beginDelegateMode(); }});
+// Staff assign
 document.addEventListener('click',(e)=>{
   const b = e.target.closest('.sAssign'); if(!b) return;
   const card = e.target.closest('.staff'); if(!card) return;
   onStaffClick(card.dataset.id);
 });
-$('difficulty').addEventListener('change',(e)=>{ state.diffKey=e.target.value; });
-$('lenient').addEventListener('change',(e)=>{ state.lenient=e.target.checked; });
-$('restart').addEventListener('click', startGame);
-btnOverlayRestart.addEventListener('click', ()=>{
-  overlay.classList.remove('active');
+
+// Optional controls (guarded if not present)
+$('difficulty')?.addEventListener('change',(e)=>{ state.diffKey=e.target.value; });
+$('lenient')?.addEventListener('change',(e)=>{ state.lenient=e.target.checked; });
+$('restart')?.addEventListener('click', startGame);
+
+btnOverlayRestart?.addEventListener('click', ()=>{
+  overlay?.classList.remove('active');
   if (btnOverlayRestart.textContent.includes('Restart')) { startGame(); return; }
   // Next Day
   state.day++; state.resolvedToday=0; state.dayChars=0; state.dayCorrectChars=0; state.dayTimeMs=0;
   state.queue.length=0; state.activeId=null;
   state.streak=0; state.streakMilestone=0;
-  // refresh per-day power-ups
   state.power = { auto: 2, oof: 2 };
   unlockStaffForDay();
   renderStaff(); renderPowerBar();
@@ -645,15 +645,18 @@ async function startGame(){
   state.streak=0; state.streakMilestone=0; state.awardFlip=0; state.justAuto=false;
   DIFF.intern.targetWPM=35; DIFF.manager.targetWPM=55; DIFF.director.targetWPM=75;
 
-  elStress.style.width='0%'; elDone.textContent='0'; elWpm.textContent='0'; elAcc.textContent='100%';
-  overlay.classList.remove('active');
+  if (elStress) elStress.style.width='0%';
+  if (elDone) elDone.textContent='0';
+  if (elWpm)  elWpm.textContent='0';
+  if (elAcc)  elAcc.textContent='100%';
+  overlay?.classList.remove('active');
   const dd=$('difficulty'); if (dd) dd.value='intern';
 
   ensureHudBits(); renderStaff(); renderPowerBar();
   spawnEmail(); spawnEmail();
   renderInbox(); updatePills(); ensureIntro();
-  if (!firstLaunchShown){ document.getElementById('introOverlay').classList.add('active'); firstLaunchShown=true; }
-  elInput.value=''; elInput.disabled=false; elInput.placeholder='';
+  if (!firstLaunchShown){ document.getElementById('introOverlay')?.classList.add('active'); firstLaunchShown=true; }
+  if (elInput){ elInput.value=''; elInput.disabled=false; elInput.placeholder=''; }
 }
 function startLoops(initial=false){
   renderInbox(); updatePills();
@@ -661,36 +664,5 @@ function startLoops(initial=false){
   cancelAnimationFrame(state.rafId);
   state.rafId = requestAnimationFrame(tick);
 }
-
-function renderPowerBar(){
-  ensureHudBits();
-  const bar = document.getElementById('powerBar');
-  if (bar) bar.style.display = powerEnabled() ? '' : 'none';
-  if (!powerEnabled()) return; // don’t touch counts/disabled if hidden
-  $('pAutoC').textContent = `x${state.power.auto}`;
-  $('pOofC').textContent  = `x${state.power.oof}`;
-  $('pAuto').disabled = state.power.auto<=0 || !active() || isDelegated(active());
-  $('pOof').disabled  = state.power.oof<=0  || !active();
-  $('pDel').classList.toggle('active', state.selectingDelegate);
-}
-
-function renderStaff(){
-  const { srow } = ensureHudBits();
-  if (srow) srow.style.display = powerEnabled() ? '' : 'none';
-  if (!powerEnabled()) return;
-  // existing staff card rendering...
-}
-function unlockStaffForDay(){
-  if (state.day < 2) return; // none in Orientation
-  const targetCount = Math.min(5, state.day - 1); // Day2=1, Day3=2, ...
-  while (state.staff.length < targetCount){
-    const name = STAFF_NAMES[state.staff.length % STAFF_NAMES.length];
-    const baseWpm = 35 + state.staff.length*8;
-    const st = { id:cryptoRandomId(), name, wpm:baseWpm, taskId:null, progress:0, assignedAt:0 };
-    state.staff.push(st);
-    showToast(`Teammate unlocked: ${st.name} · ${st.wpm} WPM`);
-  }
-}
-
 
 startGame();
