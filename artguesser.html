@@ -24,14 +24,16 @@
     button,.btn{margin-top:1rem;padding:.7rem 1.4rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
     [hidden]{display:none !important}
     @keyframes drop {
-  0%   { margin-top:-60px; opacity:0; }
-  70%  { margin-top: 8px;  opacity:1; }
-  85%  { margin-top:-4px; }
-  100% { margin-top: 0; }
+  /* Anchor is 41px, so start above it and bounce to -41px */
+  0%   { margin-top:-101px; opacity:0; }  /* -41 - 60 */
+  70%  { margin-top:-33px;  opacity:1; }  /* a little below anchor */
+  85%  { margin-top:-45px; }
+  100% { margin-top:-41px; }              /* exact anchor offset */
 }
 
-/* Only animate the marker icon, not the shadow */
-.leaflet-marker-icon.drop { animation: drop .6s ease-out forwards; }
+/* No 'forwards' needed, but fine if you keep it since 100% = -41px */
+.leaflet-marker-icon.drop { animation: drop .6s ease-out; }
+
 
     #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity .3s}
     #lightbox.active{opacity:1;pointer-events:auto}
