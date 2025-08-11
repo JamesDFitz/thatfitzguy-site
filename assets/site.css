@@ -70,3 +70,9 @@ a:hover{text-decoration:underline}
 
 /* Utility */
 .mt-2{margin-top:8px} .mt-3{margin-top:12px} .mt-4{margin-top:16px}
+
+/* Keep ghost + typed in *one* layer with matching metrics */
+.target, .target * { white-space: pre-wrap; font-variant-ligatures: none; }
+.target .ghost { color:#9aa0a6; }
+.target .ok    { color:#111; }
+.target .err   { background:#ffe7e7; color:#a40000; }
