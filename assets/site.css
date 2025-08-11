@@ -120,3 +120,26 @@ a:hover{text-decoration:underline}
 .intro-card p  { margin:0 0 .75rem 0; color:#444; }
 .intro-card .btn { background:#1a73e8; color:#fff; border:none; border-radius:8px; padding:.6rem 1.2rem; cursor:pointer; }
 
+/* Tooltips (data-tip) */
+.has-tip { position: relative; }
+.has-tip[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%; bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(6px);
+  background: #111; color: #fff; font-size: .75rem; line-height: 1.1;
+  padding: .35rem .5rem; border-radius: 6px;
+  white-space: nowrap; opacity: 0; pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,.2);
+}
+.has-tip:hover[data-tip]::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Toasts */
+.toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 99999; }
+.toast { background: #111; color: #fff; padding: .55rem .75rem; border-radius: 10px; opacity: 0; transform: translateY(8px); transition: .2s ease; box-shadow: 0 10px 24px rgba(0,0,0,.25); }
+.toast.in { opacity: 0.96; transform: translateY(0); }
+
+/* Streak pill */
+.pill--streak { background: #ecfeff; color: #0e7490; }
+
