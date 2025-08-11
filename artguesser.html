@@ -23,8 +23,16 @@
     #info .actual{font-weight:600}
     button,.btn{margin-top:1rem;padding:.7rem 1.4rem;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
     [hidden]{display:none !important}
-    @keyframes drop{0%{transform:translateY(-600px);opacity:0}80%{transform:translateY(8px);opacity:1}90%{transform:translateY(-4px)}100%{transform:translateY(0)}}
-    .drop{animation:drop .6s ease-out forwards}
+    @keyframes drop {
+  0%   { margin-top:-60px; opacity:0; }
+  70%  { margin-top: 8px;  opacity:1; }
+  85%  { margin-top:-4px; }
+  100% { margin-top: 0; }
+}
+
+/* Only animate the marker icon, not the shadow */
+.leaflet-marker-icon.drop { animation: drop .6s ease-out forwards; }
+
     #lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;justify-content:center;align-items:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity .3s}
     #lightbox.active{opacity:1;pointer-events:auto}
     #lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;transition:transform .2s ease-out}
