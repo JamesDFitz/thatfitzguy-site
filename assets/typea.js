@@ -1,4 +1,4 @@
-// Type A — Calibration Day, intro overlay, day goals, gentler Day 2
+// Type A — calibration, intro, day stats, power-ups, delegation
 const $ = (id) => document.getElementById(id);
 const elInbox = $('inbox'), elGhost = $('ghost'), elInput = $('input');
 const elSender = $('metaSender'), elSubject = $('metaSubject'), elUrg = $('metaUrgency');
@@ -6,7 +6,6 @@ const elWpm = $('wpm'), elAcc = $('acc'), elDone = $('done'), elStress = $('stre
 const overlay = $('overlay'), ovWpm = $('ovWpm'), ovAcc = $('ovAcc'), ovDone = $('ovDone');
 const btnOverlayRestart = $('overlayRestart');
 
-// Defaults (we retune targetWPM after calibration)
 const DIFF = {
   intern:  { spawnMs:[9000,14000], targetWPM:35, queueMax:4, baseDayGoal:10 },
   manager: { spawnMs:[7000,12000], targetWPM:55, queueMax:5, baseDayGoal:14 },
@@ -21,29 +20,32 @@ let state = {
   queue: [],
   activeId: null,
   stress: 0,
-  resolved: 0,
-  resolvedToday: 0,
-  totalChars: 0,
-  correctChars: 0,
-  totalTimeMs: 0,
-  dayChars: 0,
-  dayTimeMs: 0,
+  resolved: 0, resolvedToday: 0,
+  totalChars: 0, correctChars: 0, totalTimeMs: 0,
+  dayChars: 0, dayCorrectChars: 0, dayTimeMs: 0,
 
-  diffKey: 'intern',   // default: Intern
+  diffKey: 'intern',
   lenient: true,
   day: 1,
-  spawnTimer: null,
-  rafId: 0
+  spawnTimer: null, rafId: 0,
+
+  // power-ups
+  power: { auto: 2, oof: 2 }, // per-day
+  selectingDelegate: false,
+
+  // staff
+  staff: [] // {id,name,wpm,taskId:null,progress:0,assignedAt:0}
 };
 
-const rnd = (min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+const STAFF_NAMES = ['Ava','Ben','Cara','Diego','Elle','Finn','Gus','Hana'];
+const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const now = ()=>performance.now();
 
-/* ---------- HUD helpers ---------- */
-function ensureHudPills(){
+/* ---------- HUD pills ---------- */
+function ensureHudBits(){
   const hud = document.querySelector('.hud');
   if (!hud) return {};
-  // Emails left today
+  // Left-today pill
   let left = document.getElementById('leftToday');
   if (!left) {
     left = document.createElement('span');
@@ -59,21 +61,44 @@ function ensureHudPills(){
     cal.id = 'calBadge';
     hud.insertBefore(cal, left);
   }
-  return { left, cal };
+  // Power bar
+  let pbar = document.getElementById('powerBar');
+  if (!pbar) {
+    pbar = document.createElement('div');
+    pbar.id = 'powerBar';
+    pbar.className = 'powerbar';
+    pbar.innerHTML = `
+      <button id="pAuto" class="btn btn-sm">Auto-complete <span id="pAutoC" class="count"></span></button>
+      <button id="pDel" class="btn btn-sm">Delegate</button>
+      <button id="pOof" class="btn btn-sm">Send OOF <span id="pOofC" class="count"></span></button>`;
+    hud.appendChild(pbar);
+  }
+  // Staff row
+  let srow = document.getElementById('staffRow');
+  if (!srow) {
+    srow = document.createElement('div');
+    srow.id = 'staffRow';
+    srow.className = 'staffrow';
+    elInbox.parentElement.appendChild(srow);
+  }
+  return { left: left, cal: cal, pbar: pbar, srow: srow };
 }
+function dayGoalFor(){ return state.day===1 ? 5 : (DIFF[state.diffKey].baseDayGoal + Math.max(0, state.day-2)); }
 function updatePills(){
-  const { left, cal } = ensureHudPills();
-  if (left) {
-    const leftCount = Math.max(0, dayGoalFor() - state.resolvedToday);
-    left.textContent = `Left today: ${leftCount}`;
-  }
-  if (cal) {
-    if (state.day === 1) { cal.hidden = false; cal.textContent = 'New-Hire Orientation'; }
-    else cal.hidden = true;
-  }
+  const { left, cal } = ensureHudBits();
+  if (left) left.textContent = `Left today: ${Math.max(0, dayGoalFor() - state.resolvedToday)}`;
+  if (cal) { cal.hidden = state.day !== 1; cal.textContent = 'New-Hire Orientation'; }
+}
+function renderPowerBar(){
+  ensureHudBits();
+  $('pAutoC').textContent = `x${state.power.auto}`;
+  $('pOofC').textContent = `x${state.power.oof}`;
+  $('pAuto').disabled = state.power.auto<=0 || !active() || isDelegated(active());
+  $('pOof').disabled  = state.power.oof<=0  || !active();
+  $('pDel').classList.toggle('active', state.selectingDelegate);
 }
 
-/* ---------- Intro overlay (JS-injected) ---------- */
+/* ---------- Intro overlay ---------- */
 function ensureIntro(){
   if (document.getElementById('introOverlay')) return;
   const div = document.createElement('div');
@@ -82,22 +107,33 @@ function ensureIntro(){
   div.innerHTML = `
     <div class="intro-card">
       <h3>Welcome to the job 👋</h3>
-      <p>You’ve always been a go-getter. Today you’re stepping into an office manager role. First up: <strong>New-Hire Orientation</strong> so we can gauge your typing baseline. It’s low pressure—long timers and no failing. After that, your workload scales to your speed.</p>
+      <p>You’ve always been a go-getter. Today you’re stepping into an office manager role. First up: <strong>New-Hire Orientation</strong> — long timers, no failing. We’ll use it to gauge your baseline. After that, your workload scales to your speed.</p>
+      <div class="intro-grid">
+        <div>
+          <h4>Controls</h4>
+          <ul>
+            <li><strong>F1–F6</strong>: select email</li>
+            <li><strong>Tab</strong>/<strong>Shift+Tab</strong>: next/prev email</li>
+            <li><strong>Enter</strong>: send (exact)</li>
+            <li><strong>Ctrl/Cmd+Enter</strong>: send (lenient)</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Power-ups</h4>
+          <ul>
+            <li><strong>Auto-complete</strong>: finishes current email</li>
+            <li><strong>Delegate</strong>: assign to a teammate (they type at their WPM)</li>
+            <li><strong>Send OOF</strong>: adds extra time to the deadline</li>
+          </ul>
+        </div>
+      </div>
       <button id="introStart" class="btn">Start Orientation</button>
     </div>`;
   document.body.appendChild(div);
   $('introStart').addEventListener('click', ()=>{
     div.classList.remove('active');
-    startLoops(); // begin timers and spawns
-    elInput.focus();
+    startLoops(); elInput.focus();
   });
-}
-
-/* ---------- Day goals ---------- */
-function dayGoalFor(){
-  if (state.day === 1) return 5; // fixed for calibration
-  const base = DIFF[state.diffKey].baseDayGoal;
-  return base + Math.max(0, state.day - 2); // small ramp: day2 ~ base, day3+ +1/day
 }
 
 /* ---------- Data ---------- */
@@ -111,23 +147,21 @@ function refillBag(){
   for (let i=bag.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [bag[i],bag[j]]=[bag[j],bag[i]]; }
 }
 
-/* ---------- Normalization ---------- */
+/* ---------- Normalize ---------- */
 function normChar(ch){
-  const map = {'“':'"','”':'"','„':'"','‟':'"','«':'"','»':'"','‘':"'",'’':"'",'‚':"'",'‛':"'",'–':'-','—':'-','−':'-','\u00A0':' ','\u2009':' ','\u200A':' ','\u2002':' ','\u2003':' ','\u2006':' '};
+  const map={'“':'"','”':'"','„':'"','‟':'"','«':'"','»':'"','‘':"'",'’':"'",'‚':"'",'‛':"'",'–':'-','—':'-','−':'-','\u00A0':' ','\u2009':' ','\u200A':' ','\u2002':' ','\u2003':' ','\u2006':' '};
   return map[ch] || ch;
 }
+function normalizeStr(s){ return [...(s||'')].map(normChar).join(''); }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 /* ---------- Deadlines & spawns ---------- */
 function deadlineMsFor(bodyLen){
-  // Day 1: super long (no fail)
-  if (state.day === 1) return 10 * 60 * 1000; // 10 minutes
-  const words = bodyLen / 5;
-  // Day factor makes Day 2 a bit easier; ramps later
-  const dayFactor = state.day === 2 ? 0.9 : (state.day === 3 ? 1.0 : 1.07 + 0.02*(state.day-4));
+  if (state.day===1) return 10*60*1000; // Orientation can't fail
+  const words = bodyLen/5;
+  const dayFactor = state.day===2?0.9:(state.day===3?1.0:1.07+0.02*(state.day-4));
   const target = Math.max(20, Math.round(DIFF[state.diffKey].targetWPM * dayFactor));
-  let ms = (words / target) * 60000;
-  ms *= rnd(108,125)/100;
+  let ms = (words/target)*60000; ms *= rnd(108,125)/100;
   return Math.max(15000, Math.min(ms, 90000));
 }
 function spawnEmail(){
@@ -138,9 +172,9 @@ function spawnEmail(){
   const idx = bag.pop();
   const src = emailsPool[idx];
   const dueMs = deadlineMsFor(src.bodyTarget.length);
-  const dueAt = now() + dueMs;
-  const email = { id:`${src.id}-${Math.random().toString(36).slice(2,7)}`, sender:src.sender, subject:src.subject,
-    baseUrgency:src.urgency||'normal', body:src.bodyTarget, dueAt, dueMs, typed:'', firstKeyAt:0 };
+  const dueAt = now()+dueMs;
+  const email={ id:`${src.id}-${Math.random().toString(36).slice(2,7)}`, sender:src.sender, subject:src.subject,
+    baseUrgency:src.urgency||'normal', body:src.bodyTarget, dueAt, dueMs, typed:'', firstKeyAt:0, delegatedTo:null };
   state.queue.push(email);
   if (!state.activeId) selectEmail(email.id);
   renderInbox();
@@ -148,22 +182,55 @@ function spawnEmail(){
 function scheduleSpawns(initial=false){
   clearTimeout(state.spawnTimer);
   const [a,b] = DIFF[state.diffKey].spawnMs;
-  // After day transitions, avoid walls: stagger first few
-  const delay = initial ? rnd(a+1500, b+2500) : rnd(a,b);
+  const delay = initial ? rnd(a+1500,b+2500) : rnd(a,b);
   state.spawnTimer = setTimeout(()=>{ spawnEmail(); scheduleSpawns(); }, delay);
 }
 
 /* ---------- Urgency ---------- */
-function urgencyFromRemaining(rem, dueMs){
-  const r = Math.max(0, rem) / Math.max(1, dueMs);
-  if (r <= 0.25) return 'urgent';
-  if (r <= 0.60) return 'normal';
+function urgencyFromRemaining(rem,dueMs){
+  const r=Math.max(0,rem)/Math.max(1,dueMs);
+  if (r<=0.25) return 'urgent';
+  if (r<=0.60) return 'normal';
   return 'low';
 }
-function ringColorFor(u){ return u==='urgent' ? '#e53935' : (u==='low' ? '#2f9e44' : '#f7b500'); }
+function ringColorFor(u){ return u==='urgent'?'#e53935':(u==='low'?'#2f9e44':'#f7b500'); }
 function setMetaUrg(u){
-  elUrg.textContent = u[0].toUpperCase()+u.slice(1);
-  elUrg.className = 'badge ' + (u==='urgent'?'urgent': (u==='low'?'low':''));
+  elUrg.textContent=u[0].toUpperCase()+u.slice(1);
+  elUrg.className='badge '+(u==='urgent'?'urgent':(u==='low'?'low':''));
+}
+
+/* ---------- Staff ---------- */
+function unlockStaffForDay(){
+  // 1 staff on Day 1 (they can help in orientation), +1 per day up to 5
+  const targetCount = Math.min(5, 1 + (state.day-1));
+  while (state.staff.length < targetCount){
+    const name = STAFF_NAMES[state.staff.length % STAFF_NAMES.length];
+    const baseWpm = 35 + state.staff.length*8; // each new hire is faster
+    state.staff.push({ id:cryptoRandomId(), name, wpm:baseWpm, taskId:null, progress:0, assignedAt:0 });
+  }
+}
+function cryptoRandomId(){ return Math.random().toString(36).slice(2,9); }
+function isDelegated(e){ return !!e?.delegatedTo; }
+function renderStaff(){
+  const { srow } = ensureHudBits();
+  srow.innerHTML = state.staff.map(st=>{
+    const working = !!st.taskId;
+    const task = state.queue.find(x=>x.id===st.taskId);
+    const pct = task ? Math.min(100, Math.floor((st.progress/(task.body.length||1))*100)) : 0;
+    return `<div class="staff ${working?'busy':''}" data-id="${st.id}">
+      <div class="name">${st.name}</div>
+      <div class="meta">${st.wpm} WPM ${working?`· ${pct}%`:''}</div>
+      <button class="sAssign btn btn-xs" ${working?'disabled':''}>${working?'Working…':'Assign'}</button>
+    </div>`;
+  }).join('');
+}
+function delegateTo(staffId, emailId){
+  const st = state.staff.find(s=>s.id===staffId); if (!st || st.taskId) return;
+  const e = state.queue.find(x=>x.id===emailId); if (!e || isDelegated(e)) return;
+  e.delegatedTo = staffId; st.taskId = emailId; st.progress = (e.typed||'').length; st.assignedAt = now();
+  // freeze player typing on this task
+  if (state.activeId===emailId) { elInput.value=''; elInput.placeholder=`Delegated to ${st.name} — working…`; }
+  renderInbox(); renderStaff();
 }
 
 /* ---------- Selection & render ---------- */
@@ -172,21 +239,54 @@ function selectEmail(id){
   state.activeId = e ? e.id : null;
   elSender.textContent = e ? e.sender : '—';
   elSubject.textContent = e ? e.subject : 'Select an email';
-  elInput.value = e ? e.typed : '';
+  elInput.disabled = e && isDelegated(e);
+  elInput.placeholder = e && isDelegated(e) ? 'Delegated — you cannot type this.' : '';
+  elInput.value = e ? (e.typed||'') : '';
   paintLine(e);
-  if (e){ const rem = Math.max(0, e.dueAt - now()); setMetaUrg(urgencyFromRemaining(rem, e.dueMs)); }
+  if (e){ const rem=Math.max(0,e.dueAt-now()); setMetaUrg(urgencyFromRemaining(rem,e.dueMs)); }
   else { elUrg.textContent=''; elUrg.className='badge'; }
-  renderInbox();
+  renderInbox(); renderPowerBar();
+}
+function active(){ return state.queue.find(x=>x.id===state.activeId)||null; }
+function requiredWpmFor(e){
+  if (isDelegated(e)) return 0;
+  const rem = Math.max(1, e.dueAt-now());
+  const remainingChars = Math.max(0, e.body.length - (e.typed||'').length);
+  const req = ((remainingChars/5) / (rem/60000));
+  return Math.max(0, Math.round(req/5)*5);
+}
+function renderInbox(){
+  const items = state.queue.map((e)=>{
+    const rem = Math.max(0, e.dueAt-now());
+    const pct = Math.floor(Math.max(0,1 - rem/e.dueMs)*100);
+    const urg = urgencyFromRemaining(rem,e.dueMs);
+    const ringColor = ringColorFor(urg);
+    const timeLeft = Math.ceil(rem/1000);
+    const activeCls = e.id===state.activeId ? ' active' : '';
+    const who = e.delegatedTo ? state.staff.find(s=>s.id===e.delegatedTo)?.name : null;
+    const tag = who ? ` <span class="delegated">→ ${who}</span>` : ` <span style="color:#7a7a7a;font-size:.8rem">· ~${requiredWpmFor(e)} WPM</span>`;
+    if (e.id===state.activeId) setMetaUrg(urg);
+    return `
+      <div class="email${activeCls}" data-id="${e.id}">
+        <div class="ring" style="--p:${pct};--ring-color:${ringColor}"><span>${timeLeft}</span></div>
+        <div style="flex:1;min-width:0">
+          <div class="sender">${e.sender}</div>
+          <div class="subject ellipsis">${e.subject}${tag}</div>
+        </div>
+        <span class="badge ${urg==='urgent'?'urgent':urg==='low'?'low':''}">${urg}</span>
+      </div>`;
+  }).join('');
+  elInbox.innerHTML = items || `<div class="email" style="justify-content:center;color:#666">Inbox zero — nice.</div>`;
+  updatePills(); renderPowerBar();
 }
 function paintLine(e){
   if (!e){ elGhost.innerHTML=''; return; }
-  const t = e.typed || '';
-  const target = e.body;
+  const t = e.typed||'', target = e.body;
   const n = Math.min(t.length, target.length);
-  let correctSoFar = 0, html = '';
+  let correctSoFar=0, html='';
   for (let i=0;i<target.length;i++){
-    if (i < n){
-      const ok = normChar(t[i]) === normChar(target[i]);
+    if (i<n){
+      const ok = normChar(t[i])===normChar(target[i]);
       if (ok) correctSoFar++;
       html += `<span class="${ok?'ok':'err'}">${escapeHtml(target[i])}</span>`;
     } else {
@@ -196,207 +296,244 @@ function paintLine(e){
   elGhost.innerHTML = html;
   if (!e.firstKeyAt || t.length===0){ elWpm.textContent='0'; elAcc.textContent='100%'; }
   else {
-    const elapsed = Math.max(1, now() - e.firstKeyAt);
-    const grossWpm = ((t.length/5) / (elapsed/60000)) || 0;
+    const elapsed = Math.max(1, now()-e.firstKeyAt);
+    const grossWpm = ((t.length/5)/(elapsed/60000))||0;
     elWpm.textContent = Math.round(grossWpm);
-    const acc = n ? (correctSoFar / n) * 100 : 100;
-    elAcc.textContent = Math.max(0, Math.min(100, Math.round(acc))) + '%';
+    const acc = n ? (correctSoFar/n)*100 : 100;
+    elAcc.textContent = Math.round(Math.max(0, Math.min(100, acc)))+'%';
   }
 }
-function requiredWpmFor(e){
-  const rem = Math.max(1, e.dueAt - now());
-  const remainingChars = Math.max(0, e.body.length - (e.typed||'').length);
-  const req = ((remainingChars/5) / (rem/60000));
-  return Math.max(0, Math.round(req/5)*5);
-}
-function renderInbox(){
-  const items = state.queue.map((e)=>{
-    const rem = Math.max(0, e.dueAt - now());
-    const pElapsed = Math.max(0, 1 - rem / e.dueMs);
-    const pct = Math.floor(pElapsed*100);
-    const urg = urgencyFromRemaining(rem, e.dueMs);
-    const ringColor = ringColorFor(urg);
-    const timeLeft = Math.ceil(rem/1000);
-    const activeCls = e.id===state.activeId ? ' active' : '';
-    const reqWpm = requiredWpmFor(e);
-    if (e.id===state.activeId) setMetaUrg(urg);
-    return `
-      <div class="email${activeCls}" data-id="${e.id}">
-        <div class="ring" style="--p:${pct};--ring-color:${ringColor}"><span>${timeLeft}</span></div>
-        <div style="flex:1;min-width:0">
-          <div class="sender">${e.sender}</div>
-          <div class="subject ellipsis">${e.subject} <span style="color:#7a7a7a;font-size:.8rem">· ~${reqWpm} WPM</span></div>
-        </div>
-        <span class="badge ${urg==='urgent'?'urgent':urg==='low'?'low':''}">${urg}</span>
-      </div>`;
-  }).join('');
-  elInbox.innerHTML = items || `<div class="email" style="justify-content:center;color:#666">Inbox zero — nice.</div>`;
-  updatePills();
-}
 
-/* ---------- Input / send ---------- */
+/* ---------- Input & send ---------- */
 elInput.addEventListener('input', ()=>{
-  const e = state.queue.find(x=>x.id===state.activeId); if (!e) return;
+  const e=active(); if(!e||isDelegated(e)) return;
   if (!e.firstKeyAt && elInput.value.length>0) e.firstKeyAt = now();
   e.typed = elInput.value;
   paintLine(e);
 });
 function trySend(exactOnly=false){
-  const e = state.queue.find(x=>x.id===state.activeId); if (!e) return;
-  const t = e.typed || '', target = e.body;
-  const n = Math.min(t.length, target.length);
-  let correct = 0; for (let i=0;i<n;i++) if (normChar(t[i])===normChar(target[i])) correct++;
-  const exact = (t === target);
-  const accTyped = n ? correct/n : 1;
-  const elapsed = e.firstKeyAt ? (now() - e.firstKeyAt) : 1;
-  const ok = exact || (!exactOnly && state.lenient && accTyped >= 0.95 && t.length >= target.length*0.95);
+  const e=active(); if(!e||isDelegated(e)) return;
+  const t = e.typed||'', target=e.body;
+  const tN = normalizeStr(t), tgtN = normalizeStr(target);
+
+  // exact: normalized strings must match
+  const exact = (tN === tgtN);
+
+  // character-accurate counts for whole target (prevents bogus 100%)
+  let correctCount = 0;
+  for (let i=0;i<target.length;i++){
+    const tc = tN[i] ?? '';
+    const gc = tgtN[i] ?? '';
+    if (tc === gc) correctCount++;
+  }
+  const accWhole = correctCount / target.length;
+  const elapsed = e.firstKeyAt ? (now()-e.firstKeyAt) : 1;
+
+  const ok = exact || (!exactOnly && state.lenient && accWhole >= 0.95);
   if (ok){
+    // aggregate totals & day totals
     state.resolved++; state.resolvedToday++;
-    state.totalChars += target.length; state.correctChars += Math.round(target.length * accTyped);
-    state.totalTimeMs += elapsed; state.dayChars += target.length; state.dayTimeMs += elapsed;
+    state.totalChars += target.length; state.correctChars += correctCount; state.totalTimeMs += elapsed;
+    state.dayChars += target.length;   state.dayCorrectChars += correctCount; state.dayTimeMs += elapsed;
+
     bumpStress(-8);
     removeEmail(e.id);
     checkDayProgress();
     selectNext();
   } else {
-    elInput.style.borderColor = '#ef476f';
-    setTimeout(()=>elInput.style.borderColor='#e0e0e0', 150);
+    elInput.style.borderColor='#ef476f';
+    setTimeout(()=>elInput.style.borderColor='#e0e0e0',150);
   }
 }
 function removeEmail(id){
-  const idx = state.queue.findIndex(x=>x.id===id);
+  const idx=state.queue.findIndex(x=>x.id===id);
   if (idx>=0) state.queue.splice(idx,1);
   renderInbox();
 }
 function selectNext(dir=1){
   if (!state.queue.length){ state.activeId=null; renderInbox(); return; }
-  const idx = Math.max(0, state.queue.findIndex(x=>x.id===state.activeId));
-  const nextIdx = (idx + dir + state.queue.length) % state.queue.length;
+  const idx=Math.max(0,state.queue.findIndex(x=>x.id===state.activeId));
+  const nextIdx=(idx+dir+state.queue.length)%state.queue.length;
   selectEmail(state.queue[nextIdx].id);
+}
+
+/* ---------- Power-ups ---------- */
+function useAuto(){
+  const e=active(); if(!e||isDelegated(e)||state.power.auto<=0) return;
+  state.power.auto--; e.typed = e.body; if(!e.firstKeyAt) e.firstKeyAt=now()-500; paintLine(e); trySend(true); renderPowerBar();
+}
+function useOOF(){
+  const e=active(); if(!e||state.power.oof<=0) return;
+  state.power.oof--; e.dueAt += 45000; renderInbox(); renderPowerBar();
+}
+function beginDelegateMode(){
+  state.selectingDelegate = !state.selectingDelegate;
+  renderPowerBar(); renderStaff();
+}
+function onStaffClick(staffId){
+  if (!state.selectingDelegate) return;
+  const e=active(); if(!e) return;
+  delegateTo(staffId, e.id);
+  state.selectingDelegate=false; renderPowerBar();
 }
 
 /* ---------- Day progression ---------- */
 function finishCalibration(){
-  const personalWPM = state.dayTimeMs ? ((state.dayChars/5) / (state.dayTimeMs/60000)) : 50;
-  const base = Math.max(25, Math.round(personalWPM * 0.90)); // 10% cushion
-  DIFF.intern.targetWPM   = Math.max(25, Math.round(base * 0.80));
-  DIFF.manager.targetWPM  = Math.max(35, Math.round(base * 1.00));
-  DIFF.director.targetWPM = Math.max(45, Math.round(base * 1.20));
+  const personalWPM = state.dayTimeMs ? ((state.dayChars/5)/(state.dayTimeMs/60000)) : 50;
+  const base = Math.max(25, Math.round(personalWPM*0.90));
+  DIFF.intern.targetWPM  = Math.max(25, Math.round(base*0.80));
+  DIFF.manager.targetWPM = Math.max(35, Math.round(base*1.00));
+  DIFF.director.targetWPM= Math.max(45, Math.round(base*1.20));
 
-  // Summary overlay
+  // Summary (use day stats)
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
-  const avgWpm = state.totalTimeMs ? Math.round(((state.totalChars/5)/(state.totalTimeMs/60000))) : 0;
-  const accPct = state.totalChars ? Math.round((state.correctChars/state.totalChars)*100) : 100;
-  $('overlay').querySelector('h3').textContent = 'Orientation complete ✅';
-  $('overlay').querySelector('p').textContent = `Baseline ~${Math.round(personalWPM)} WPM. We’ll tailor your workload to match.`;
-  ovWpm.textContent = avgWpm; ovAcc.textContent = accPct + '%'; ovDone.textContent = state.resolved;
-  btnOverlayRestart.textContent = 'Start Day 2';
+  const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
+  const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
+  $('overlay').querySelector('h3').textContent='Orientation complete ✅';
+  $('overlay').querySelector('p').textContent=`Baseline ~${Math.round(personalWPM)} WPM. We’ll tailor your workload to match.`;
+  ovWpm.textContent=avgWpm; ovAcc.textContent=accPct+'%'; ovDone.textContent=state.resolved;
+  btnOverlayRestart.textContent='Start Day 2';
   overlay.classList.add('active');
 }
 function showDayComplete(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
-  const avgWpm = state.totalTimeMs ? Math.round(((state.totalChars/5)/(state.totalTimeMs/60000))) : 0;
-  const accPct = state.totalChars ? Math.round((state.correctChars/state.totalChars)*100) : 100;
-  $('overlay').querySelector('h3').textContent = `Day ${state.day} complete 🎯`;
-  $('overlay').querySelector('p').textContent = `Nice work. You cleared ${dayGoalFor()} emails. Ready for tomorrow?`;
-  ovWpm.textContent = avgWpm; ovAcc.textContent = accPct + '%'; ovDone.textContent = state.resolved;
-  btnOverlayRestart.textContent = 'Next Day';
+  const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
+  const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
+  $('overlay').querySelector('h3').textContent=`Day ${state.day} complete 🎯`;
+  $('overlay').querySelector('p').textContent=`Nice work. You cleared ${dayGoalFor()} emails. Ready for tomorrow?`;
+  ovWpm.textContent=avgWpm; ovAcc.textContent=accPct+'%'; ovDone.textContent=state.resolved;
+  btnOverlayRestart.textContent='Next Day';
   overlay.classList.add('active');
 }
 function checkDayProgress(){
   if (state.resolvedToday >= dayGoalFor()){
-    if (state.day === 1) finishCalibration();
+    if (state.day===1) finishCalibration();
     else showDayComplete();
   }
 }
 
-/* ---------- Tick & stress ---------- */
+/* ---------- Tick: timers + staff typing ---------- */
 function tick(){
-  const t = now();
-  for (let i=state.queue.length-1; i>=0; i--){
+  const t=now();
+  // Staff type
+  for (const st of state.staff){
+    if (!st.taskId) continue;
+    const e = state.queue.find(x=>x.id===st.taskId);
+    if (!e){ st.taskId=null; continue; }
+    const cps = (st.wpm*5)/60; // chars per second
+    const dt = 1/60; // approx per frame
+    st.progress = Math.min(e.body.length, st.progress + cps*dt);
+    e.typed = e.body.slice(0, Math.floor(st.progress));
+    if (!e.firstKeyAt) e.firstKeyAt = st.assignedAt;
+    if (e.typed.length >= e.body.length){
+      // staff completed → same accounting as player exact
+      const correctCount = e.body.length; // they type exact
+      const elapsed = Math.max(1, t - e.firstKeyAt);
+      state.resolved++; state.resolvedToday++;
+      state.totalChars += e.body.length; state.correctChars += correctCount; state.totalTimeMs += elapsed;
+      state.dayChars += e.body.length;   state.dayCorrectChars += correctCount; state.dayTimeMs += elapsed;
+      bumpStress(-8);
+      removeEmail(e.id);
+      if (state.activeId===e.id) state.activeId=null;
+      st.taskId=null; st.progress=0; st.assignedAt=0;
+      checkDayProgress();
+    }
+  }
+
+  // Timers & expiries
+  for (let i=state.queue.length-1;i>=0;i--){
     const e = state.queue[i];
-    if (state.day === 1) {
-      // Orientation: never expire; extend if needed
-      if (t >= e.dueAt) e.dueAt = t + 10*60*1000;
+    if (state.day===1){
+      if (t>=e.dueAt) e.dueAt = t + 10*60*1000; // extend forever in orientation
       continue;
     }
-    if (t >= e.dueAt){
+    if (t>=e.dueAt){
       bumpStress(15);
+      // unassign any staff
+      const st = state.staff.find(s=>s.taskId===e.id);
+      if (st){ st.taskId=null; st.progress=0; st.assignedAt=0; }
       state.queue.splice(i,1);
-      if (e.id === state.activeId) state.activeId = null;
+      if (e.id===state.activeId) state.activeId=null;
     }
   }
-  if (state.stress >= 100){ endGame(); return; }
-  renderInbox();
+  if (state.stress>=100){ endGame(); return; }
+  renderInbox(); renderStaff();
   state.rafId = requestAnimationFrame(tick);
 }
-function bumpStress(delta){
-  state.stress = Math.max(0, Math.min(100, state.stress + delta));
-  elStress.style.width = state.stress + '%';
+function endGame(){
+  cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
+  const avgWpm = state.dayTimeMs ? Math.round(((state.dayChars/5)/(state.dayTimeMs/60000))) : 0;
+  const accPct = state.dayChars ? Math.round((state.dayCorrectChars/state.dayChars)*100) : 100;
+  $('overlay').querySelector('h3').textContent='Burnout 💥';
+  $('overlay').querySelector('p').textContent='You pushed it too hard. Take a breath and try again.';
+  ovWpm.textContent=avgWpm; ovAcc.textContent=accPct+'%'; ovDone.textContent=state.resolved;
+  btnOverlayRestart.textContent='Restart';
+  overlay.classList.add('active');
 }
+function bumpStress(d){ state.stress=Math.max(0,Math.min(100,state.stress+d)); elStress.style.width=state.stress+'%'; }
 
-/* ---------- Controls ---------- */
-window.addEventListener('keydown', (e)=>{
-  if (/^F[1-6]$/.test(e.key)){
-    const idx = Number(e.key.slice(1)) - 1;
-    if (state.queue[idx]) { selectEmail(state.queue[idx].id); e.preventDefault(); }
-    return;
-  }
-  if (e.key === 'Tab'){ e.preventDefault(); selectNext(e.shiftKey ? -1 : 1); return; }
-  if (e.key === 'Enter'){ if (e.ctrlKey || e.metaKey) { trySend(false); } else { trySend(true); } e.preventDefault(); }
+/* ---------- Events ---------- */
+window.addEventListener('keydown',(e)=>{
+  if (/^F[1-6]$/.test(e.key)){ const idx=Number(e.key.slice(1))-1; if(state.queue[idx]){ selectEmail(state.queue[idx].id); e.preventDefault(); } return; }
+  if (e.key==='Tab'){ e.preventDefault(); selectNext(e.shiftKey?-1:1); return; }
+  if (e.key==='Enter'){ if (e.ctrlKey||e.metaKey) trySend(false); else trySend(true); e.preventDefault(); return; }
+  if (e.key.toLowerCase()==='a'){ useAuto(); }
+  if (e.key.toLowerCase()==='o'){ useOOF(); }
+  if (e.key.toLowerCase()==='d'){ beginDelegateMode(); }
 });
-elInbox.addEventListener('click', (e)=>{
-  const item = e.target.closest('.email'); if (!item) return;
-  selectEmail(item.dataset.id); elInput.focus();
+elInbox.addEventListener('click',(e)=>{
+  const it=e.target.closest('.email'); if(!it) return;
+  selectEmail(it.dataset.id); elInput.focus();
 });
-$('difficulty').addEventListener('change', (e)=>{ state.diffKey = e.target.value; });
-$('lenient').addEventListener('change', (e)=>{ state.lenient = e.target.checked; });
+document.addEventListener('click',(e)=>{
+  const btn = e.target.closest('#pAuto'); if(btn){ useAuto(); }
+});
+document.addEventListener('click',(e)=>{
+  const btn = e.target.closest('#pOof'); if(btn){ useOOF(); }
+});
+document.addEventListener('click',(e)=>{
+  const btn = e.target.closest('#pDel'); if(btn){ beginDelegateMode(); }
+});
+document.addEventListener('click',(e)=>{
+  const b = e.target.closest('.sAssign'); if(!b) return;
+  const card = e.target.closest('.staff'); if(!card) return;
+  onStaffClick(card.dataset.id);
+});
+$('difficulty').addEventListener('change',(e)=>{ state.diffKey=e.target.value; });
+$('lenient').addEventListener('change',(e)=>{ state.lenient=e.target.checked; });
 $('restart').addEventListener('click', startGame);
 btnOverlayRestart.addEventListener('click', ()=>{
-  if (btnOverlayRestart.textContent.includes('Restart')) {
-    overlay.classList.remove('active'); startGame();
-  } else {
-    // Next day start
-    overlay.classList.remove('active');
-    state.day++;
-    state.resolvedToday = 0;
-    state.dayChars = 0; state.dayTimeMs = 0;
-    // Clear any leftover queue to avoid “wall”
-    state.queue.length = 0; state.activeId = null;
-    // gentle start: seed 1, stagger spawns
-    spawnEmail();
-    startLoops(true); // initial stagger
-  }
+  overlay.classList.remove('active');
+  if (btnOverlayRestart.textContent.includes('Restart')) { startGame(); return; }
+  // Next Day
+  state.day++; state.resolvedToday=0; state.dayChars=0; state.dayCorrectChars=0; state.dayTimeMs=0;
+  state.queue.length=0; state.activeId=null;
+  // refresh per-day power-ups
+  state.power = { auto: 2, oof: 2 };
+  unlockStaffForDay();
+  renderStaff(); renderPowerBar();
+  // gentle start
+  spawnEmail(); startLoops(true);
 });
 
 /* ---------- Start / reset ---------- */
 async function startGame(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
   if (!emailsPool.length) await loadPool();
-
-  state.queue = []; state.activeId = null;
-  state.stress = 0; state.resolved = 0; state.resolvedToday = 0;
-  state.totalChars = 0; state.correctChars = 0; state.totalTimeMs = 0;
-  state.dayChars = 0; state.dayTimeMs = 0;
-  state.day = 1;
-  // reset base targets (calibration will retune afterward)
-  DIFF.intern.targetWPM  = 35;
-  DIFF.manager.targetWPM = 55;
-  DIFF.director.targetWPM= 75;
-
-  elStress.style.width = '0%'; elDone.textContent = '0'; elWpm.textContent = '0'; elAcc.textContent = '100%';
+  state.queue=[]; state.activeId=null; state.stress=0;
+  state.resolved=0; state.resolvedToday=0;
+  state.totalChars=0; state.correctChars=0; state.totalTimeMs=0;
+  state.dayChars=0; state.dayCorrectChars=0; state.dayTimeMs=0;
+  state.day=1; state.power={auto:2,oof:2}; state.staff=[]; unlockStaffForDay();
+  DIFF.intern.targetWPM=35; DIFF.manager.targetWPM=55; DIFF.director.targetWPM=75;
+  elStress.style.width='0%'; elDone.textContent='0'; elWpm.textContent='0'; elAcc.textContent='100%';
   overlay.classList.remove('active');
-
-  // UI defaults
-  const dd = $('difficulty'); if (dd) dd.value = 'intern';
-
-  // Seed a light inbox; show intro on very first launch
+  const dd=$('difficulty'); if (dd) dd.value='intern';
+  ensureHudBits(); renderStaff(); renderPowerBar();
   spawnEmail(); spawnEmail();
-  renderInbox(); updatePills();
-  ensureIntro();
-  // Show intro overlay only the first time after load/reset
-  if (!firstLaunchShown){ document.getElementById('introOverlay').classList.add('active'); firstLaunchShown = true; }
-  elInput.value = '';
+  renderInbox(); updatePills(); ensureIntro();
+  if (!firstLaunchShown){ document.getElementById('introOverlay').classList.add('active'); firstLaunchShown=true; }
+  elInput.value=''; elInput.disabled=false; elInput.placeholder='';
 }
 function startLoops(initial=false){
   renderInbox(); updatePills();
