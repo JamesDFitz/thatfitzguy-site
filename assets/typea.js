@@ -5,7 +5,7 @@ const elSender = $('metaSender'), elSubject = $('metaSubject'), elUrg = $('metaU
 const elWpm = $('wpm'), elAcc = $('acc'), elDone = $('done'), elStress = $('stressBar');
 const overlay = $('overlay'), ovWpm = $('ovWpm'), ovAcc = $('ovAcc'), ovDone = $('ovDone');
 const btnOverlayRestart = $('overlayRestart');
-const powerEnabled = () => state.day > 0; // disabled in Orientation (Day 1) (set to 0 for test)
+const powerEnabled = () => state.day > 1; // disabled in Orientation (Day 1) (set to 0 for test)
 
 const DIFF = {
   intern:  { spawnMs:[9000,14000], targetWPM:35, queueMax:4, baseDayGoal:10 },
