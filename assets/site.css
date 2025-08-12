@@ -143,3 +143,7 @@ a:hover{text-decoration:underline}
 /* Streak pill */
 .pill--streak { background: #ecfeff; color: #0e7490; }
 
+.email { cursor: pointer; }
+.staff { cursor: pointer; }
+.staff.busy { cursor: not-allowed; }
+
