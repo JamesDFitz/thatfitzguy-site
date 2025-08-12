@@ -47,6 +47,7 @@ let state = {
 const STAFF_NAMES = ['Ava','Ben','Cara','Diego','Elle','Finn','Gus','Hana'];
 const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const now = ()=>performance.now();
+let lastTick = now();
 
 /* ---------- Toasts ---------- */
 function ensureToastContainer(){
@@ -282,11 +283,27 @@ function renderStaff(){
 }
 function delegateTo(staffId, emailId){
   const st = state.staff.find(s=>s.id===staffId); if (!st || st.taskId) return;
-  const e = state.queue.find(x=>x.id===emailId); if (!e || isDelegated(e)) return;
-  e.delegatedTo = staffId; st.taskId = emailId; st.progress = (e.typed||'').length; st.assignedAt = now();
-  if (state.activeId===emailId && elInput) { elInput.value=''; elInput.placeholder=`Delegated to ${st.name} — working…`; }
-  renderInbox(); renderStaff();
+  const e  = state.queue.find(x=>x.id===emailId); if (!e || isDelegated(e)) return;
+
+  e.delegatedTo = staffId;
+  st.taskId     = emailId;
+  st.progress   = (e.typed||'').length;
+  st.assignedAt = now();
+
+  // If you're looking at this email, lock the input and show a hint
+  if (state.activeId===emailId && elInput) {
+    elInput.value = '';
+    elInput.placeholder = `Delegated to ${st.name} — working…`;
+    elInput.disabled = true;
+  }
+
+  // Optional: re-select to refresh the meta panel
+  if (state.activeId === emailId) selectEmail(emailId);
+
+  renderInbox();
+  renderStaff();
 }
+
 
 /* ---------- Selection & render ---------- */
 function selectEmail(id){
@@ -533,14 +550,16 @@ function checkDayProgress(){
 
 /* ---------- Tick: timers + staff typing ---------- */
 function tick(){
-  const t=now();
+  const t = now();
+  const dt = (t - lastTick) / 1000; // seconds since last frame
+  lastTick = t;
+  
   // Staff type
   for (const st of state.staff){
     if (!st.taskId) continue;
     const e = state.queue.find(x=>x.id===st.taskId);
     if (!e){ st.taskId=null; continue; }
-    const cps = (st.wpm*5)/60;
-    const dt = 1/60;
+    const cps = (st.wpm * 5) / 60; // chars per second
     st.progress = Math.min(e.body.length, st.progress + cps*dt);
     e.typed = e.body.slice(0, Math.floor(st.progress));
     if (!e.firstKeyAt) e.firstKeyAt = st.assignedAt;
@@ -646,42 +665,21 @@ document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pAuto');
 document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pOof');  if(btn){ useOOF();  }});
 document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pDel');  if(btn){ beginDelegateMode(); }});
 
-
-// Click anywhere on a staff card while in delegate mode → assign ACTIVE email
+// Click a staff card (or its button) while in delegate mode → assign ACTIVE email
 document.addEventListener('click', (e) => {
   const card = e.target.closest('.staff');
   if (!card) return;
   if (!powerEnabled() || !state.selectingDelegate) return;
-  if (card.classList.contains('busy')) return;
+  if (card.classList.contains('busy')) { showToast('They’re already working on one.'); return; }
 
-  // Must have an active email selected
   const current = active();
-  if (!current) {
-    showToast('Select an email first, then pick a teammate.');
-    return;
-  }
-  delegateTo(card.dataset.id, current.id);
-  setDelegateMode(false);
-  const name = state.staff.find(s => s.id === card.dataset.id)?.name || 'teammate';
-  showToast(`Delegated to ${name}`);
-});
-
-
-// Staff card click while in delegate mode: assign active email to that teammate
-document.addEventListener('click', (e) => {
-  const card = e.target.closest('.staff');
-  if (!card) return;
-  if (!state.selectingDelegate || !powerEnabled()) return;
-  if (card.classList.contains('busy')) return; // already working
+  if (!current) { showToast('Select an email first, then pick a teammate.'); return; }
 
   const staffId = card.dataset.id;
-  const eActive = active();
-  if (!eActive) return;
-
-  delegateTo(staffId, eActive.id);
-  state.selectingDelegate = false;
-  renderPowerBar();
-  showToast(`Delegated to ${state.staff.find(s => s.id === staffId)?.name || 'teammate'}`);
+  delegateTo(staffId, current.id);
+  setDelegateMode(false); // visually exit delegate mode
+  const name = state.staff.find(s => s.id === staffId)?.name || 'teammate';
+  showToast(`Delegated to ${name}`);
 });
 
 
