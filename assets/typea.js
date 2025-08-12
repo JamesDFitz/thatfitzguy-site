@@ -616,13 +616,15 @@ window.addEventListener('keydown',(e)=>{
   if (e.key === 'F9'){ e.preventDefault(); if (powerEnabled()) beginDelegateMode(); return; }
 });
 
-// Inbox click: normal select, or delegate-to-first-free if in delegate mode
-elInbox?.addEventListener('click',(e)=>{
+// Inbox click (delegated): select email, or delegate current click → first free teammate
+document.addEventListener('click', (e) => {
   const it = e.target.closest('.email');
   if (!it) return;
-  if (state.selectingDelegate && powerEnabled()){
+
+  // If we're in Delegate mode (Day > 1), assign this email to first free teammate
+  if (state.selectingDelegate && powerEnabled()) {
     const free = state.staff.find(s => !s.taskId);
-    if (free){
+    if (free) {
       delegateTo(free.id, it.dataset.id);
       state.selectingDelegate = false;
       renderPowerBar();
@@ -630,8 +632,12 @@ elInbox?.addEventListener('click',(e)=>{
       e.preventDefault();
       return;
     }
-    state.selectingDelegate = false; renderPowerBar();
+    // No free staff → exit delegate mode
+    state.selectingDelegate = false;
+    renderPowerBar();
   }
+
+  // Normal behavior: select the email
   selectEmail(it.dataset.id);
   elInput?.focus();
 });
@@ -646,6 +652,24 @@ document.addEventListener('click',(e)=>{
   const card = e.target.closest('.staff'); if(!card) return;
   onStaffClick(card.dataset.id);
 });
+
+// Staff card click while in delegate mode: assign active email to that teammate
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('.staff');
+  if (!card) return;
+  if (!state.selectingDelegate || !powerEnabled()) return;
+  if (card.classList.contains('busy')) return; // already working
+
+  const staffId = card.dataset.id;
+  const eActive = active();
+  if (!eActive) return;
+
+  delegateTo(staffId, eActive.id);
+  state.selectingDelegate = false;
+  renderPowerBar();
+  showToast(`Delegated to ${state.staff.find(s => s.id === staffId)?.name || 'teammate'}`);
+});
+
 
 // Optional controls (guarded if not present)
 $('difficulty')?.addEventListener('change', (e)=> { state.diffKey = e.target.value; });
