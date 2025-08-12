@@ -5,7 +5,7 @@ const elSender = $('metaSender'), elSubject = $('metaSubject'), elUrg = $('metaU
 const elWpm = $('wpm'), elAcc = $('acc'), elDone = $('done'), elStress = $('stressBar');
 const overlay = $('overlay'), ovWpm = $('ovWpm'), ovAcc = $('ovAcc'), ovDone = $('ovDone');
 const btnOverlayRestart = $('overlayRestart');
-const powerEnabled = () => state.day > 1; // disabled in Orientation (Day 1)
+const powerEnabled = () => state.day > 0; // disabled in Orientation (Day 1) (set to 0 for test)
 
 const DIFF = {
   intern:  { spawnMs:[9000,14000], targetWPM:35, queueMax:4, baseDayGoal:10 },
@@ -156,7 +156,7 @@ function ensureIntro(){
   div.innerHTML = `
     <div class="intro-card">
       <h3>Welcome to the job 👋</h3>
-      <p>You’ve always been a go-getter. Today you’re stepping into an office manager role. First up: <strong>New-Hire Orientation</strong> — long timers, no failing. We’ll use it to gauge your baseline. After that, your workload scales to your speed. That's right!</p>
+      <p>You’ve always been a go-getter. Today you’re stepping into an office manager role. First up: <strong>New-Hire Orientation</strong> — long timers, no failing allowed! We’ll use it to gauge your baseline. After that, your workload scales to your speed. That's right!</p>
       <div class="intro-grid">
         <div>
           <h4>Controls</h4>
