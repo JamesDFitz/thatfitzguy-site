@@ -274,10 +274,10 @@ function renderStaff(){
     const task = state.queue.find(x=>x.id===st.taskId);
     const pct = task ? Math.min(100, Math.floor((st.progress/(task.body.length||1))*100)) : 0;
     return `<div class="staff ${working?'busy':''} has-tip" data-id="${st.id}" data-tip="${working?'Working…':'Click Assign to delegate current email'}">
-      <div class="name">${st.name}</div>
-      <div class="meta">${st.wpm} WPM ${working?`· ${pct}%`:''}</div>
-      <button class="sAssign btn btn-xs" ${working?'disabled':''}>${working?'Working…':'Assign'}</button>
-    </div>`;
+  <div class="name">${st.name}</div>
+  <div class="meta">${st.wpm} WPM ${working?`· ${pct}%`:''}</div>
+  <button type="button" class="sAssign btn btn-xs" ${working?'disabled':''}>${working?'Working…':'Assign'}</button>
+</div>`;
   }).join('');
 }
 function delegateTo(staffId, emailId){
@@ -475,12 +475,6 @@ function beginDelegateMode(){
   if(!powerEnabled()) return;
   setDelegateMode(!state.selectingDelegate);
 }
-function onStaffClick(staffId){
-  if (!state.selectingDelegate) return;
-  const e=active(); if(!e) return;
-  delegateTo(staffId, e.id);
-  state.selectingDelegate=false; renderPowerBar();
-}
 
 /* ---------- Day progression ---------- */
 function finishCalibration(){
@@ -651,12 +645,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pAuto'); if(btn){ useAuto(); }});
 document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pOof');  if(btn){ useOOF();  }});
 document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pDel');  if(btn){ beginDelegateMode(); }});
-// Staff assign
-document.addEventListener('click',(e)=>{
-  const b = e.target.closest('.sAssign'); if(!b) return;
-  const card = e.target.closest('.staff'); if(!card) return;
-  onStaffClick(card.dataset.id);
-});
+
 
 // Click anywhere on a staff card while in delegate mode → assign ACTIVE email
 document.addEventListener('click', (e) => {
@@ -725,6 +714,37 @@ btnOverlayRestart?.addEventListener('click', ()=>{
   renderStaff(); renderPowerBar();
   spawnEmail(); startLoops(true);
 });
+
+
+// Staff card (or its Assign button) click while in delegate mode → assign ACTIVE email
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('.staff');
+  if (!card) return;
+
+  // Only act in delegate mode after Day 1
+  if (!powerEnabled() || !state.selectingDelegate) return;
+
+  // Ignore if this teammate is already busy
+  if (card.classList.contains('busy')) {
+    showToast('They’re already working on one.');
+    return;
+  }
+
+  // Must have an active email selected
+  const current = active();
+  if (!current) {
+    showToast('Select an email first, then click a teammate.');
+    return;
+  }
+
+  // Assign and exit delegate mode
+  const staffId = card.dataset.id;
+  delegateTo(staffId, current.id);
+  setDelegateMode(false);        // turns off the orange state + button highlight
+  const name = state.staff.find(s => s.id === staffId)?.name || 'teammate';
+  showToast(`Delegated to ${name}`);
+});
+
 
 /* ---------- Start / reset ---------- */
 async function startGame(){
