@@ -145,5 +145,10 @@ a:hover{text-decoration:underline}
 
 .email { cursor: pointer; }
 .staff { cursor: pointer; }
-.staff.busy { cursor: not-allowed; }
+.staff.busy { cursor: not-allowed; opacity: .6; }
+body.delegate-mode .staff:not(.busy) { outline: 2px dashed var(--accent); outline-offset: 4px; }
+#pDel.active { box-shadow: 0 0 0 2px var(--accent) inset; }
+
+
+
 
