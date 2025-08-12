@@ -459,9 +459,21 @@ function useOOF(){ if(!powerEnabled()) return;
   showToast('OOF sent: +45s');
   renderInbox(); renderPowerBar();
 }
-function beginDelegateMode(){ if(!powerEnabled()) return;
-  state.selectingDelegate = !state.selectingDelegate;
-  renderPowerBar(); renderStaff();
+
+function setDelegateMode(on){
+  state.selectingDelegate = !!on;
+  // Visually reflect state
+  const btnDel = $('pDel');
+  if (btnDel) btnDel.classList.toggle('active', state.selectingDelegate);
+  document.body.classList.toggle('delegate-mode', state.selectingDelegate);
+  renderPowerBar(); 
+  renderStaff();
+}
+
+
+function beginDelegateMode(){ 
+  if(!powerEnabled()) return;
+  setDelegateMode(!state.selectingDelegate);
 }
 function onStaffClick(staffId){
   if (!state.selectingDelegate) return;
@@ -538,6 +550,7 @@ function tick(){
     st.progress = Math.min(e.body.length, st.progress + cps*dt);
     e.typed = e.body.slice(0, Math.floor(st.progress));
     if (!e.firstKeyAt) e.firstKeyAt = st.assignedAt;
+    if (state.activeId === e.id) paintLine(e);
     if (e.typed.length >= e.body.length){
       const elapsed = Math.max(1, t - e.firstKeyAt);
       state.resolved++; state.resolvedToday++;
@@ -622,7 +635,14 @@ document.addEventListener('click', (e) => {
   if (!it) return;
 
   // If we're in Delegate mode (Day > 1), assign this email to first free teammate
-  if (state.selectingDelegate && powerEnabled()) {
+    if (state.selectingDelegate && powerEnabled()) {
+    // Instead of delegating here, just select the email and instruct the user:
+    selectEmail(it.dataset.id);
+    showToast('Now click a teammate to delegate.');
+    e.preventDefault();
+    return;
+  }
+
     const free = state.staff.find(s => !s.taskId);
     if (free) {
       delegateTo(free.id, it.dataset.id);
@@ -652,6 +672,26 @@ document.addEventListener('click',(e)=>{
   const card = e.target.closest('.staff'); if(!card) return;
   onStaffClick(card.dataset.id);
 });
+
+// Click anywhere on a staff card while in delegate mode → assign ACTIVE email
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('.staff');
+  if (!card) return;
+  if (!powerEnabled() || !state.selectingDelegate) return;
+  if (card.classList.contains('busy')) return;
+
+  // Must have an active email selected
+  const current = active();
+  if (!current) {
+    showToast('Select an email first, then pick a teammate.');
+    return;
+  }
+  delegateTo(card.dataset.id, current.id);
+  setDelegateMode(false);
+  const name = state.staff.find(s => s.id === card.dataset.id)?.name || 'teammate';
+  showToast(`Delegated to ${name}`);
+});
+
 
 // Staff card click while in delegate mode: assign active email to that teammate
 document.addEventListener('click', (e) => {
