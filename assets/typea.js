@@ -655,7 +655,6 @@ document.addEventListener('click', (e) => {
     // No free staff → exit delegate mode
     state.selectingDelegate = false;
     renderPowerBar();
-  }
 
   // Normal behavior: select the email
   selectEmail(it.dataset.id);
