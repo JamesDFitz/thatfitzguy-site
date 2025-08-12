@@ -155,7 +155,7 @@ function ensureIntro(){
   div.innerHTML = `
     <div class="intro-card">
       <h3>Welcome to the job 👋</h3>
-      <p>You’ve always been a go-getter. Today you’re stepping into an office manager role. First up: <strong>New-Hire Orientation</strong> — long timers, no failing. We’ll use it to gauge your baseline. After that, your workload scales to your speed. Just type the emails and send them, and you'll get this office whipped into shape in no time!</p>
+      <p>You’ve always been a go-getter. Today you’re stepping into an office manager role. First up: <strong>New-Hire Orientation</strong> — long timers, no failing. We’ll use it to gauge your baseline. After that, your workload scales to your speed. Or does it??</p>
       <div class="intro-grid">
         <div>
           <h4>Controls</h4>
