@@ -49,6 +49,14 @@ const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const now = ()=>performance.now();
 let lastTick = now();
 
+// Throttled render cadence
+const INBOX_RENDER_MS = 250;  // update inbox ~4x/sec
+let nextInboxRenderAt = 0;
+
+// Only rebuild staff DOM when structure/assignment changes.
+// Progress % gets a lightweight update each frame.
+let staffDirty = true;
+
 /* ---------- Toasts ---------- */
 function ensureToastContainer(){
   if (document.getElementById('toasts')) return;
@@ -156,7 +164,7 @@ function ensureIntro(){
   div.innerHTML = `
     <div class="intro-card">
       <h3>Welcome to the job 👋</h3>
-      <p>You’ve always been a go-getter. Today you’re stepping into an office manager role. First up: <strong>New-Hire Orientation</strong> — long timers, no failing allowed! We’ll use it to gauge your baseline. After that, your workload scales to your speed. That's right!</p>
+      <p>You’ve always been a go-getter. A real Type-A! Today you’re stepping into an office manager role. First up: <strong>New-Hire Orientation</strong> — long timers, no failing allowed! We’ll use it to gauge your baseline. After that, your workload scales to your speed. That's right!</p>
       <div class="intro-grid">
         <div>
           <h4>Controls</h4>
@@ -262,6 +270,7 @@ function unlockStaffForDay(){
     const st = { id:cryptoRandomId(), name, wpm:baseWpm, taskId:null, progress:0, assignedAt:0 };
     state.staff.push(st);
     showToast(`Teammate unlocked: ${st.name} · ${st.wpm} WPM`);
+    staffDirty = true;
   }
 }
 function isDelegated(e){ return !!e?.delegatedTo; }
@@ -270,17 +279,47 @@ function renderStaff(){
   if (!srow) return;
   srow.style.display = powerEnabled() ? '' : 'none';
   if (!powerEnabled()) return;
+
+  // Full (re)build only when flagged dirty
+  if (!staffDirty) return;
   srow.innerHTML = state.staff.map(st=>{
     const working = !!st.taskId;
     const task = state.queue.find(x=>x.id===st.taskId);
     const pct = task ? Math.min(100, Math.floor((st.progress/(task.body.length||1))*100)) : 0;
     return `<div class="staff ${working?'busy':''} has-tip" data-id="${st.id}" data-tip="${working?'Working…':'Click Assign to delegate current email'}">
-  <div class="name">${st.name}</div>
-  <div class="meta">${st.wpm} WPM ${working?`· ${pct}%`:''}</div>
-  <button type="button" class="sAssign btn btn-xs" ${working?'disabled':''}>${working?'Working…':'Assign'}</button>
-</div>`;
+      <div class="name">${st.name}</div>
+      <div class="meta">${st.wpm} WPM ${working?`· ${pct}%`:''}</div>
+      <button type="button" class="sAssign btn btn-xs" ${working?'disabled':''}>${working?'Working…':'Assign'}</button>
+    </div>`;
   }).join('');
+  staffDirty = false;
 }
+
+function updateStaffProgressUI(){
+  const { srow } = ensureHudBits();
+  if (!srow || !powerEnabled()) return;
+  for (const st of state.staff){
+    const card = srow.querySelector(`.staff[data-id="${st.id}"]`);
+    if (!card) continue;
+    const meta = card.querySelector('.meta');
+    const btn  = card.querySelector('.sAssign');
+    const working = !!st.taskId;
+
+    if (working){
+      const e = state.queue.find(x=>x.id===st.taskId);
+      const pct = e ? Math.min(100, Math.floor((st.progress/(e.body.length||1))*100)) : 0;
+      if (meta) meta.textContent = `${st.wpm} WPM · ${pct}%`;
+      card.classList.add('busy');
+      if (btn){ btn.disabled = true; btn.textContent = 'Working…'; }
+    } else {
+      if (meta) meta.textContent = `${st.wpm} WPM`;
+      card.classList.remove('busy');
+      if (btn){ btn.disabled = false; btn.textContent = 'Assign'; }
+    }
+  }
+}
+
+
 function delegateTo(staffId, emailId){
   const st = state.staff.find(s=>s.id===staffId); if (!st || st.taskId) return;
   const e  = state.queue.find(x=>x.id===emailId); if (!e || isDelegated(e)) return;
@@ -301,6 +340,7 @@ function delegateTo(staffId, emailId){
   if (state.activeId === emailId) selectEmail(emailId);
 
   renderInbox();
+  staffDirty = true;
   renderStaff();
 }
 
@@ -551,7 +591,7 @@ function checkDayProgress(){
 /* ---------- Tick: timers + staff typing ---------- */
 function tick(){
   const t = now();
-  const dt = (t - lastTick) / 1000; // seconds since last frame
+  const dt = (t - lastTick) / 1000; // seconds
   lastTick = t;
   
   // Staff type
@@ -573,6 +613,7 @@ function tick(){
       removeEmail(e.id);
       if (state.activeId===e.id) state.activeId=null;
       st.taskId=null; st.progress=0; st.assignedAt=0;
+      staffDirty = true;
       state.streak = 0; state.streakMilestone = 0;
       updatePills();
       checkDayProgress();
@@ -589,15 +630,23 @@ function tick(){
     if (t>=e.dueAt){
       bumpStress(15);
       const st = state.staff.find(s=>s.taskId===e.id);
-      if (st){ st.taskId=null; st.progress=0; st.assignedAt=0; }
+      if (st){ st.taskId=null; st.progress=0; st.assignedAt=0; staffDirty = true;}
       state.queue.splice(i,1);
       if (e.id===state.activeId) state.activeId=null;
       state.streak = 0; state.streakMilestone = 0;
     }
   }
-  if (state.stress>=100){ endGame(); return; }
-  renderInbox(); renderStaff();
-  state.rafId = requestAnimationFrame(tick);
+  // Update inbox at a steady cadence (don’t rebuild 60x/sec)
+if (t >= nextInboxRenderAt) {
+  renderInbox();
+  nextInboxRenderAt = t + INBOX_RENDER_MS;
+}
+
+// Update staff progress text every frame (cheap), rebuild only when needed
+updateStaffProgressUI();
+renderStaff();
+
+state.rafId = requestAnimationFrame(tick);
 }
 function endGame(){
   cancelAnimationFrame(state.rafId); clearTimeout(state.spawnTimer);
