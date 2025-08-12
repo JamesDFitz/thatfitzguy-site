@@ -629,37 +629,23 @@ window.addEventListener('keydown',(e)=>{
   if (e.key === 'F9'){ e.preventDefault(); if (powerEnabled()) beginDelegateMode(); return; }
 });
 
-// Inbox click (delegated): select email, or delegate current click → first free teammate
+// Inbox click: select email normally. If in delegate mode, just prompt the user.
 document.addEventListener('click', (e) => {
   const it = e.target.closest('.email');
   if (!it) return;
 
-  // If we're in Delegate mode (Day > 1), assign this email to first free teammate
-    if (state.selectingDelegate && powerEnabled()) {
-    // Instead of delegating here, just select the email and instruct the user:
+  if (state.selectingDelegate && powerEnabled()) {
     selectEmail(it.dataset.id);
     showToast('Now click a teammate to delegate.');
     e.preventDefault();
     return;
   }
 
-    const free = state.staff.find(s => !s.taskId);
-    if (free) {
-      delegateTo(free.id, it.dataset.id);
-      state.selectingDelegate = false;
-      renderPowerBar();
-      showToast(`Delegated to ${free.name}`);
-      e.preventDefault();
-      return;
-    }
-    // No free staff → exit delegate mode
-    state.selectingDelegate = false;
-    renderPowerBar();
-
-  // Normal behavior: select the email
+  // Normal behavior
   selectEmail(it.dataset.id);
   elInput?.focus();
 });
+
 
 // Power buttons
 document.addEventListener('click',(e)=>{ const btn = e.target.closest('#pAuto'); if(btn){ useAuto(); }});
