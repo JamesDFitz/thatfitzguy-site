@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ghost Hunt — thatfitzguy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/site.css" />
+  <style>
+    .game-wrap { width:min(1120px, 94%); margin:24px auto 56px; }
+    .panel { border:1px solid var(--border); border-radius:16px; background:#fff; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,.05); }
+    .header { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; }
+    .hud { display:flex; gap:8px; flex-wrap:wrap; }
+    .pill-ghost { background:#eef6ff; color:#1e3a8a; border:1px solid #d8e7ff; padding:.32rem .62rem; border-radius:999px; font-weight:700; }
+    .board-wrap { margin-top:14px; display:grid; grid-template-columns: 1fr 260px; gap:14px; }
+    @media (max-width: 920px) { .board-wrap { grid-template-columns:1fr; } }
+    canvas { width:100%; height:auto; border-radius:12px; border:1px solid #d9e2f3; background:#0a1222; }
+    .controls { font-size:.94rem; color:#4b5563; }
+    .controls ul { margin:.5rem 0 .75rem; padding-left:1.1rem; }
+    .status { margin-top:8px; font-weight:600; color:#1f2937; min-height:1.4em; }
+    .btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  </style>
+</head>
+<body>
+  <div data-include="/partials/header.html"></div>
+
+  <main class="game-wrap">
+    <section class="panel">
+      <div class="header">
+        <div>
+          <h1 style="margin:0">Ghost Hunt</h1>
+          <p style="margin:4px 0 0;color:var(--muted)">Control Blinky and coordinate with the squad to catch the orb-hungry runner before it clears the maze.</p>
+        </div>
+        <div class="hud">
+          <span class="pill-ghost">Level: <span id="levelLabel">1</span></span>
+          <span class="pill-ghost">Orbs Left: <span id="orbsLabel">0</span></span>
+          <span class="pill-ghost">Runner Escapes: <span id="escapesLabel">0</span>/3</span>
+        </div>
+      </div>
+
+      <div class="board-wrap">
+        <div>
+          <canvas id="board" width="720" height="504" aria-label="Ghost Hunt game board"></canvas>
+          <div class="status" id="status"></div>
+        </div>
+        <aside class="controls panel" style="padding:12px 14px">
+          <strong>How to play</strong>
+          <ul>
+            <li>You are the <strong>red ghost</strong>. Use Arrow keys / WASD.</li>
+            <li>Blue, pink, and orange ghosts are AI teammates.</li>
+            <li>Catch the runner before all orbs are collected.</li>
+            <li>Each new maze gives the runner smarter, faster routes.</li>
+          </ul>
+          <div class="btn-row">
+            <button class="btn" id="restartBtn">Restart Run</button>
+            <button class="btn" id="nextBtn" style="display:none">Next Maze</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div data-include="/partials/footer.html"></div>
+  <script src="/assets/ghost-hunt.js" type="module"></script>
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>
