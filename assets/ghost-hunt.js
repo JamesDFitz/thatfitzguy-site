@@ -204,6 +204,20 @@ function initState(level = 0) {
   state.orbs.delete(keyOf(Math.round(state.runner.x), Math.round(state.runner.y)));
   state.ghosts.forEach((g) => state.orbs.delete(keyOf(Math.round(g.x), Math.round(g.y))));
 
+  // Seed initial directions so everyone starts moving immediately.
+  for (let i = 1; i < state.ghosts.length; i += 1) {
+    const g = state.ghosts[i];
+    const start = { x: Math.round(g.x), y: Math.round(g.y) };
+    const target = nearestWalkable(state.maze, aiTargetForGhost(i));
+    const step = shortestPathStep(start, target);
+    g.dir = step ? { x: Math.sign(step.x - start.x), y: Math.sign(step.y - start.y) } : pickFallbackDirection(start, null);
+  }
+  const runnerStart = { x: Math.round(state.runner.x), y: Math.round(state.runner.y) };
+  const runnerStep = chooseRunnerTargetCell();
+  state.runner.dir = runnerStep
+    ? { x: Math.sign(runnerStep.x - runnerStart.x), y: Math.sign(runnerStep.y - runnerStart.y) }
+    : pickFallbackDirection(runnerStart, null);
+
   board.width = state.width * TILE;
   board.height = state.height * TILE;
   nextBtn.style.display = 'none';
@@ -263,6 +277,18 @@ function moveEntity(entity, dt) {
     snapToCenter(entity);
     entity.dir = { x: 0, y: 0 };
   }
+}
+
+function pickFallbackDirection(cell, currentDir) {
+  const options = getWalkNeighbors(state.maze, cell.x, cell.y)
+    .map((n) => ({ x: Math.sign(n.x - cell.x), y: Math.sign(n.y - cell.y) }))
+    .filter((d) => !currentDir || !isOpposite(d, currentDir));
+
+  if (options.length) return options[0];
+
+  const all = getWalkNeighbors(state.maze, cell.x, cell.y)
+    .map((n) => ({ x: Math.sign(n.x - cell.x), y: Math.sign(n.y - cell.y) }));
+  return all[0] || { x: 0, y: 0 };
 }
 
 function shortestPathStep(start, target, opts = {}) {
@@ -398,10 +424,13 @@ function updateAIGhosts(dt) {
     if (isNearCenter(ghost)) {
       snapToCenter(ghost);
       const start = { x: Math.round(ghost.x), y: Math.round(ghost.y) };
-      const target = aiTargetForGhost(i);
+      const rawTarget = aiTargetForGhost(i);
+      const target = nearestWalkable(state.maze, rawTarget);
       const step = shortestPathStep(start, target, { avoidReverseFrom: ghost.dir });
       if (step) {
         ghost.dir = { x: Math.sign(step.x - start.x), y: Math.sign(step.y - start.y) };
+      } else {
+        ghost.dir = pickFallbackDirection(start, ghost.dir);
       }
     }
 
@@ -418,6 +447,8 @@ function updateRunner(dt) {
     const nextCell = chooseRunnerTargetCell();
     if (nextCell) {
       runner.dir = { x: Math.sign(nextCell.x - start.x), y: Math.sign(nextCell.y - start.y) };
+    } else {
+      runner.dir = pickFallbackDirection(start, runner.dir);
     }
   }
 
@@ -536,6 +567,7 @@ function updateHud() {
 }
 
 window.addEventListener('keydown', (e) => {
+  if (!state || !state.ghosts?.length) return;
   const key = e.key.toLowerCase();
   if (['arrowup', 'w'].includes(key)) state.ghosts[0].desired = { x: 0, y: -1 };
   if (['arrowdown', 's'].includes(key)) state.ghosts[0].desired = { x: 0, y: 1 };
