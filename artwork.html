@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Original Artwork - thatfitzguy</title>
+<meta name="description" content="Original artwork from Jim Fitz's personal collection.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .artwork-page{padding:32px 0 56px}
+  .artwork-intro{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;border-bottom:1px solid var(--border);padding-bottom:22px}
+  .artwork-intro h1{font-size:clamp(28px,4vw,44px);line-height:1.05;margin:0 0 10px;color:var(--brand)}
+  .artwork-intro p{margin:0;max-width:72ch;color:var(--muted)}
+  .collection-count{border:1px solid var(--border);border-radius:999px;padding:.45rem .75rem;color:var(--muted);font-weight:700;white-space:nowrap;background:#fff}
+  .artwork-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-top:24px}
+  .art-card{margin:0;border:1px solid var(--border);border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.04);transition:transform .18s ease,box-shadow .18s ease}
+  .art-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.08)}
+  .art-card a{display:block;color:inherit;text-decoration:none}
+  .art-card img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#f6f7f9;padding:10px;border-bottom:1px solid var(--border)}
+  .art-card figcaption{padding:14px 14px 16px}
+  .art-card h2{font-size:1.05rem;line-height:1.25;margin:0 0 8px;color:var(--text)}
+  .art-card p{margin:0;color:var(--muted);font-size:.95rem;line-height:1.5}
+  @media (max-width:760px){.artwork-intro{grid-template-columns:1fr}.collection-count{justify-self:start}.artwork-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div data-include="/partials/header.html"></div>
+<main class="container artwork-page">
+  <section class="artwork-intro">
+    <div>
+      <h1>Original Artwork</h1>
+      <p>A first-draft gallery for the original artwork in my collection. Each piece opens to the full-size photo, with short notes that can grow into fuller provenance, artist, and display details later.</p>
+    </div>
+    <div class="collection-count">17 pieces</div>
+  </section>
+
+  <section class="artwork-grid" aria-label="Original artwork collection">
+    <figure class="art-card">
+      <a href="/assets/images/Cabaretti%20Charm.jpg" aria-label="Open Cabaretti Charm full-size image">
+        <img src="/assets/images/Cabaretti%20Charm.jpg" alt="Cabaretti Charm framed original artwork" decoding="async" fetchpriority="high">
+        <figcaption>
+          <h2>Cabaretti Charm</h2>
+          <p>A bold, theatrical emblem piece with saturated reds, greens, and gold framing.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Cat%20Collector.jpg" aria-label="Open Cat Collector full-size image">
+        <img src="/assets/images/Cat%20Collector.jpg" alt="Cat Collector framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Cat Collector</h2>
+          <p>A cozy interior scene with cats gathered around a collector at her desk.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Corpse%20Augur.jpg" aria-label="Open Corpse Augur full-size image">
+        <img src="/assets/images/Corpse%20Augur.jpg" alt="Corpse Augur framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Corpse Augur</h2>
+          <p>A desert-toned fantasy figure set against a wide purple sky.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Dead%20Before%20Sunrise.jpg" aria-label="Open Dead Before Sunrise full-size image">
+        <img src="/assets/images/Dead%20Before%20Sunrise.jpg" alt="Dead Before Sunrise framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Dead Before Sunrise</h2>
+          <p>A moody pursuit scene in shadowy streets just before dawn.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Highway%20Robbery.jpg" aria-label="Open Highway Robbery full-size image">
+        <img src="/assets/images/Highway%20Robbery.jpg" alt="Highway Robbery framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Highway Robbery</h2>
+          <p>A kinetic fantasy action scene full of debris, fire, and motion.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Jane%20Billich.jpg" aria-label="Open Jane Billich full-size image">
+        <img src="/assets/images/Jane%20Billich.jpg" alt="Jane Billich framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Jane Billich</h2>
+          <p>A luminous portrait of a woman reading, with warm texture and soft detail.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Phabine%20Color%20Draft.jpg" aria-label="Open Phabine Color Draft full-size image">
+        <img src="/assets/images/Phabine%20Color%20Draft.jpg" alt="Phabine Color Draft framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Phabine Color Draft</h2>
+          <p>A compact color study of an elegant interior scene in an ornate frame.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Phabine%2C%20Boss_s%20Confidant.jpg" aria-label="Open Phabine, Boss's Confidant full-size image">
+        <img src="/assets/images/Phabine%2C%20Boss_s%20Confidant.jpg" alt="Phabine, Boss's Confidant framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Phabine, Boss&#39;s Confidant</h2>
+          <p>A richly framed parlor scene with Phabine seated in quiet command.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Plotting%20a%20Choreogram%2C%20London.jpg" aria-label="Open Plotting a Choreogram, London full-size image">
+        <img src="/assets/images/Plotting%20a%20Choreogram%2C%20London.jpg" alt="Plotting a Choreogram, London framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Plotting a Choreogram, London</h2>
+          <p>A delicate figurative work with an intimate, sketchlike quality.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Shiprock%20Spirit%20Trail.jpg" aria-label="Open Shiprock Spirit Trail full-size image">
+        <img src="/assets/images/Shiprock%20Spirit%20Trail.jpg" alt="Shiprock Spirit Trail framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Shiprock Spirit Trail</h2>
+          <p>A dramatic night landscape with Shiprock rising under a star-shot sky.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Shock.jpg" aria-label="Open Shock full-size image">
+        <img src="/assets/images/Shock.jpg" alt="Shock framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Shock</h2>
+          <p>A close fantasy portrait charged with pink lightning and sudden impact.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/The%20Lake.jpg" aria-label="Open The Lake full-size image">
+        <img src="/assets/images/The%20Lake.jpg" alt="The Lake framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>The Lake</h2>
+          <p>A quiet moonlit lake scene framed by dark shoreline silhouettes.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Unforgiving%20Aim.jpg" aria-label="Open Unforgiving Aim full-size image">
+        <img src="/assets/images/Unforgiving%20Aim.jpg" alt="Unforgiving Aim framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Unforgiving Aim</h2>
+          <p>A green, high-tension archer closeup focused on the draw and release.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Untitled%20Sarah%20Fitz.jpg" aria-label="Open Untitled Sarah Fitz full-size image">
+        <img src="/assets/images/Untitled%20Sarah%20Fitz.jpg" alt="Untitled Sarah Fitz original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Untitled Sarah Fitz</h2>
+          <p>An abstract green and blue piece with layered motion and a bright focal point.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Vernal%20Sovereign.jpg" aria-label="Open Vernal Sovereign full-size image">
+        <img src="/assets/images/Vernal%20Sovereign.jpg" alt="Vernal Sovereign framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Vernal Sovereign</h2>
+          <p>A luminous stag-like creature in a green forest, framed in gold.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Willowrush%20Verge.jpg" aria-label="Open Willowrush Verge full-size image">
+        <img src="/assets/images/Willowrush%20Verge.jpg" alt="Willowrush Verge framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Willowrush Verge</h2>
+          <p>A sweeping, portal-like fantasy landscape full of water, sky, and motion.</p>
+        </figcaption>
+      </a>
+    </figure>
+
+    <figure class="art-card">
+      <a href="/assets/images/Woman%20and%20Knight.jpg" aria-label="Open Woman and Knight full-size image">
+        <img src="/assets/images/Woman%20and%20Knight.jpg" alt="Woman and Knight framed original artwork" loading="lazy" decoding="async">
+        <figcaption>
+          <h2>Woman and Knight</h2>
+          <p>A classical pastoral scene with a seated woman and a distant mounted knight.</p>
+        </figcaption>
+      </a>
+    </figure>
+  </section>
+</main>
+<div data-include="/partials/footer.html"></div>
+<script src="/assets/site.js" defer></script>
+</body>
+</html>
