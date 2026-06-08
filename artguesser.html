@@ -39,6 +39,8 @@
   .lightbox{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(17,24,39,.86)}
   .lightbox.open{display:flex}
   .lightbox img{max-width:96vw;max-height:92vh;border-radius:8px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.38)}
+  @keyframes pinDrop{0%{margin-top:-101px;opacity:0}70%{margin-top:-33px;opacity:1}85%{margin-top:-45px}100%{margin-top:-41px}}
+  .leaflet-marker-icon.pin-drop{animation:pinDrop .6s ease-out}
   @media (max-width:920px){.game-hero{grid-template-columns:1fr}.game-status{justify-self:start}.game-layout{grid-template-columns:1fr}.art-frame{min-height:300px}#map{height:54vh}}
 </style>
 </head>
@@ -123,8 +125,23 @@
   let guessLayer;
   let answerLayer;
   let lineLayer;
+  let animationFrame = 0;
+  let revealTimer = 0;
 
   const escapeMap = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+  const guessIcon = L.icon({
+    iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    iconRetinaUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize:[25,41],iconAnchor:[12,41],shadowSize:[41,41]
+  });
+  const answerIcon = L.icon({
+    iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+    iconRetinaUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl:'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    iconSize:[25,41],iconAnchor:[12,41],shadowSize:[41,41]
+  });
+
   function escapeHtml(value){return String(value || '').replace(/[&<>"']/g,(char)=>escapeMap[char]);}
   function hasWiki(work){return /^https?:\/\/en\.wikipedia\.org\/wiki\//i.test(work.wiki || '');}
   function cleanWork(work){
@@ -163,8 +180,12 @@
     return radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
   function clearMap(){
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    if (revealTimer) clearTimeout(revealTimer);
     [guessLayer, answerLayer, lineLayer].forEach((layer) => { if (layer) map.removeLayer(layer); });
     guessLayer = answerLayer = lineLayer = null;
+    animationFrame = 0;
+    revealTimer = 0;
   }
   function showError(message){errorLine.textContent = message || '';}
 
@@ -211,20 +232,68 @@
     setTimeout(() => map.invalidateSize(), 80);
   }
 
+  function addDropClass(marker){
+    const icon = marker && marker._icon;
+    if (icon) icon.classList.add('pin-drop');
+  }
+  function arcPoints(start, end, frames){
+    const dLat = end[0] - start[0];
+    const dLng = end[1] - start[1];
+    const mid = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2];
+    const perp = [-dLng, dLat];
+    const len = Math.hypot(perp[0], perp[1]) || 1;
+    const lift = Math.min(28, Math.max(6, Math.hypot(dLat, dLng) * 0.28));
+    const ctrl = [mid[0] + (perp[0] / len) * lift, mid[1] + (perp[1] / len) * lift];
+    return Array.from({length:frames + 1}, (_, index) => {
+      const t = index / frames;
+      const rest = 1 - t;
+      return [
+        rest * rest * start[0] + 2 * rest * t * ctrl[0] + t * t * end[0],
+        rest * rest * start[1] + 2 * rest * t * ctrl[1] + t * t * end[1]
+      ];
+    });
+  }
+  function showResult(guess, answer){
+    const km = Math.round(distanceKm(guess.lat, guess.lng, current.lat, current.lng));
+    const learnUrl = hasWiki(current) ? current.wiki : `https://www.google.com/search?q=${encodeURIComponent(current.title + ' ' + current.artist)}`;
+    resultPanel.innerHTML = `You were <strong>${km.toLocaleString()} km</strong> away.<span class="actual">${escapeHtml(current.museum)}</span><em>${escapeHtml(current.title)}</em> by ${escapeHtml(current.artist)}<div class="game-actions"><a class="btn" href="${escapeHtml(learnUrl)}" target="_blank" rel="noopener">Learn more</a></div>`;
+    nextButton.hidden = false;
+  }
+  function animateArc(guess, answer){
+    const frames = 82;
+    const points = arcPoints([guess.lat, guess.lng], answer, frames);
+    const startTime = performance.now();
+    const duration = 1550;
+    lineLayer = L.polyline([points[0]], {color:'#9f2f2f',weight:3,opacity:.88}).addTo(map);
+
+    function step(now){
+      const progress = Math.min(1, (now - startTime) / duration);
+      const eased = 1 - Math.pow(1 - progress, 2);
+      const nextFrame = Math.max(1, Math.round(eased * frames));
+      lineLayer.setLatLngs(points.slice(0, nextFrame + 1));
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(step);
+        return;
+      }
+      animationFrame = 0;
+      answerLayer = L.marker(answer, {icon:answerIcon}).addTo(map);
+      addDropClass(answerLayer);
+      showResult(guess, answer);
+    }
+    animationFrame = requestAnimationFrame(step);
+  }
   function revealAnswer(event){
     const guess = event && event.latlng ? event.latlng : event;
     if (!current || guessed || !guess || !Number.isFinite(guess.lat) || !Number.isFinite(guess.lng)) return;
     guessed = true;
     const answer = [current.lat, current.lng];
     const guessedPoint = [guess.lat, guess.lng];
-    guessLayer = L.circleMarker(guessedPoint,{radius:8,color:'#23594f',weight:3,fillColor:'#23594f',fillOpacity:.85}).addTo(map);
-    answerLayer = L.circleMarker(answer,{radius:9,color:'#9f2f2f',weight:3,fillColor:'#9f2f2f',fillOpacity:.9}).addTo(map);
-    lineLayer = L.polyline([guessedPoint, answer],{color:'#6b7d73',weight:3,dashArray:'8 8'}).addTo(map);
+    resultPanel.textContent = 'Tracing the path to the collection...';
+    nextButton.hidden = true;
+    guessLayer = L.marker(guessedPoint, {icon:guessIcon}).addTo(map);
+    addDropClass(guessLayer);
     map.fitBounds(L.latLngBounds([guessedPoint, answer]), {padding:[60,60], maxZoom:5});
-    const km = Math.round(distanceKm(guess.lat, guess.lng, current.lat, current.lng));
-    const learnUrl = hasWiki(current) ? current.wiki : `https://www.google.com/search?q=${encodeURIComponent(current.title + ' ' + current.artist)}`;
-    resultPanel.innerHTML = `You were <strong>${km.toLocaleString()} km</strong> away.<span class="actual">${escapeHtml(current.museum)}</span><em>${escapeHtml(current.title)}</em> by ${escapeHtml(current.artist)}<div class="game-actions"><a class="btn" href="${escapeHtml(learnUrl)}" target="_blank" rel="noopener">Learn more</a></div>`;
-    nextButton.hidden = false;
+    revealTimer = setTimeout(() => animateArc(guess, answer), 420);
   }
 
   function initMap(){
