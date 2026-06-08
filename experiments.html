@@ -1,34 +1,38 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Experiments — thatfitzguy</title>
+<title>Experiments - thatfitzguy</title>
+<meta name="description" content="Small web experiments by Jim Fitz.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css">
 </head><body>
 <div data-include="/partials/header.html"></div>
-<main class="container" style="padding:32px 0 56px">
-  <h1 style="font-size:clamp(24px,3.2vw,36px);margin:0 0 12px">Experiments</h1>
-  <p class="mt-2" style="color:var(--muted)">A growing collection of small projects.</p>
-  <div class="card-grid mt-4">
-    <!-- NEW: Type‑A -->
-    <article class="card">
-      <h3>Type‑A</h3>
-      <p>Fast‑paced typing & delegation game with calibration, scaling difficulty, power‑ups, and teammates.</p>
-      <a class="btn mt-3" href="/type-a.html">Play</a>
-    </article>
+<main class="container page-shell">
+  <header class="page-header">
+    <p class="eyebrow">Experiments</p>
+    <h1>Small things that work</h1>
+    <p class="lead">This page only links to experiments that are currently usable. A few older projects are parked while I repair them.</p>
+  </header>
 
+  <div class="card-grid">
     <article class="card">
-      <h3>Ghost Hunt</h3>
-      <p>Pac-Man inspired experiment where you play as the lead ghost and coordinate ambushes across increasingly difficult mazes.</p>
-      <a class="btn mt-3" href="/ghost-hunt.html">Play</a>
+      <span class="status-pill">Playable</span>
+      <h3 class="mt-3">Type A</h3>
+      <p>A typing and delegation game with calibration, scaling difficulty, power-ups, and teammates.</p>
+      <a class="btn" href="/type-a.html">Play Type A</a>
     </article>
+    <article class="card">
+      <span class="status-pill">Gallery</span>
+      <h3 class="mt-3">Original Artwork</h3>
+      <p>The artwork collection has become the most useful part of the site, so it gets its own page.</p>
+      <a class="btn secondary" href="/artwork.html">Open artwork</a>
+    </article>
+  </div>
 
-    <!-- Existing: ArtGuesser -->
-    <article class="card">
-      <h3>ArtGuesser</h3>
-      <p>GeoGuessr for art. Pick a spot, then watch the route fly to the museum.</p>
-      <a class="btn mt-3" href="/artguesser.html">Play</a>
-    </article>
+  <div class="note-band">
+    <strong>Parked for now:</strong> ArtGuesser is offline while I sort out its dataset, and Ghost Hunt is hidden while the game loop gets repaired.
   </div>
 </main>
 <div data-include="/partials/footer.html"></div>
