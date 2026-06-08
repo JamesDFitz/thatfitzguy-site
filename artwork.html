@@ -1,27 +1,33 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Original Artwork - thatfitzguy</title>
-<meta name="description" content="Original artwork from Jim Fitz's personal collection.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css">
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Art Collection - thatfitzguy</title>
+<meta name='description' content='Original artwork from Jim Fitz&#39;s personal collection.'>
+<link rel='preconnect' href='https://fonts.googleapis.com'>
+<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap' rel='stylesheet'>
+<link rel='stylesheet' href='/assets/site.css?v=20260608-flat'>
 <style>
   .artwork-page{padding:32px 0 56px}
   .artwork-intro{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:end;border-bottom:1px solid var(--border);padding-bottom:22px}
   .artwork-intro h1{font-size:clamp(28px,4vw,44px);line-height:1.05;margin:0 0 10px;color:var(--brand)}
   .artwork-intro p{margin:0;max-width:72ch;color:var(--muted)}
   .collection-count{border:1px solid var(--border);border-radius:999px;padding:.45rem .75rem;color:var(--muted);font-weight:700;white-space:nowrap;background:#fff}
-  .artwork-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;margin-top:24px}
+  .art-section{padding-top:30px}
+  .art-section + .art-section{margin-top:34px;border-top:1px solid var(--border)}
+  .art-section-header{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:14px}
+  .art-section-header h2{font-size:clamp(1.35rem,2.6vw,2rem);margin:0 0 6px;color:var(--text)}
+  .art-section-header p{margin:0;max-width:68ch;color:var(--muted)}
+  .section-count{color:var(--accent);font-size:.84rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+  .artwork-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
   .art-card{margin:0;border:1px solid var(--border);border-radius:14px;background:#fff;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.04);transition:transform .18s ease,box-shadow .18s ease}
   .art-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,.08)}
   .art-card a{display:block;color:inherit;text-decoration:none;height:100%}
   .art-card img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#f6f7f9;padding:10px;border-bottom:1px solid var(--border)}
   .art-card figcaption{padding:14px 14px 16px}
-  .art-card h2{font-size:1.05rem;line-height:1.25;margin:0 0 8px;color:var(--text)}
+  .art-card h3{font-size:1.05rem;line-height:1.25;margin:0 0 8px;color:var(--text)}
   .art-card p{margin:0;color:var(--muted);font-size:.95rem;line-height:1.5}
   .art-card .meta{display:block;margin-top:10px;color:#4b5563;font-size:.84rem;font-weight:700;letter-spacing:.01em}
   .art-note{margin:22px 0 0;color:var(--muted);font-size:.88rem}
@@ -46,7 +52,7 @@
   .modal-copy h2{margin:0 48px 10px 0;color:var(--brand);font-size:clamp(1.55rem,3vw,2.25rem);line-height:1.08}
   .modal-copy p{margin:0 0 16px;color:var(--muted)}
   .modal-details{display:grid;gap:0;margin:0 0 20px;padding:0}
-  .modal-details div{display:grid;grid-template-columns:94px minmax(0,1fr);gap:10px;padding:9px 0;border-top:1px solid var(--border)}
+  .modal-details div{display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px;padding:9px 0;border-top:1px solid var(--border)}
   .modal-details dt{font-weight:800;color:var(--text)}
   .modal-details dd{margin:0;color:#4b5563}
   .modal-card-ref{display:none;margin-top:16px;padding-top:18px;border-top:1px solid var(--border)}
@@ -71,7 +77,7 @@
     .modal-nav.prev{left:10px}
     .modal-nav.next{right:10px}
   }
-  @media (max-width:760px){.artwork-intro{grid-template-columns:1fr}.collection-count{justify-self:start}.artwork-grid{grid-template-columns:1fr}}
+  @media (max-width:760px){.artwork-intro,.art-section-header{grid-template-columns:1fr;display:grid}.collection-count{justify-self:start}.section-count{white-space:normal}.artwork-grid{grid-template-columns:1fr}}
   @media (max-width:560px){
     .modal-toolbar{align-items:flex-start;flex-direction:column}
     .modal-details div{grid-template-columns:1fr;gap:2px}
@@ -79,239 +85,270 @@
 </style>
 </head>
 <body>
-<div data-include="/partials/header.html"></div>
-<main class="container artwork-page">
-  <section class="artwork-intro">
+<div data-include='/partials/header.html'></div>
+<main class='container artwork-page'>
+  <section class='artwork-intro'>
     <div>
-      <h1>Original Artwork</h1>
-      <p>A gallery of original artwork in my collection, including Magic: The Gathering illustrations, family pieces, and other traditional works.</p>
+      <h1>Art Collection</h1>
+      <p>A gallery of original artwork in my collection, including Magic: The Gathering illustrations, other collected works, and family pieces.</p>
     </div>
-    <div class="collection-count">17 pieces</div>
+    <div class='collection-count'>17 pieces</div>
   </section>
 
-  <section class="artwork-grid" aria-label="Original artwork collection">
-    <figure class="art-card">
-      <a href="/assets/images/Cabaretti%20Charm.jpg" data-title="Cabaretti Charm" data-summary="Original Magic: The Gathering art by Steve Argyle for Streets of New Capenna." data-details="Artist: Steve Argyle|Card: Cabaretti Charm|Set: Streets of New Capenna" data-card="https://cards.scryfall.io/normal/front/0/8/08f33c8a-8e93-4296-964b-da132a854b3b.jpg?1664412778" data-card-alt="Cabaretti Charm Magic card" aria-label="Open Cabaretti Charm enlarged image">
-        <img src="/assets/images/Cabaretti%20Charm.jpg" alt="Cabaretti Charm framed original artwork" decoding="async" fetchpriority="high">
-        <figcaption>
-          <h2>Cabaretti Charm</h2>
-          <p>Original Magic: The Gathering art by Steve Argyle for Streets of New Capenna.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+  <section class='art-section' aria-labelledby='magic-art-heading'>
+    <div class='art-section-header'>
+      <div>
+        <h2 id='magic-art-heading'>Magic: The Gathering Art</h2>
+        <p>Original paintings, illustrations, and studies connected to Magic cards.</p>
+      </div>
+      <span class='section-count'>11 pieces</span>
+    </div>
+    <div class='artwork-grid'>
+      <figure class='art-card'>
+        <a href='/assets/images/Cabaretti%20Charm.jpg' data-title='Cabaretti Charm' data-summary='Original Magic: The Gathering art by Steve Argyle for Streets of New Capenna. Oil on linen board, 9 x 12 in.' data-details='Artist: Steve Argyle|Medium: Oil on linen board|Size: 9 x 12 in.|Card: Cabaretti Charm|Set: Streets of New Capenna' data-card='https://cards.scryfall.io/normal/front/0/8/08f33c8a-8e93-4296-964b-da132a854b3b.jpg?1664412778' data-card-alt='Cabaretti Charm Magic card' aria-label='Open Cabaretti Charm enlarged image'>
+          <img src='/assets/images/Cabaretti%20Charm.jpg' alt='Cabaretti Charm framed original artwork' decoding='async' fetchpriority='high'>
+          <figcaption>
+            <h3>Cabaretti Charm</h3>
+            <p>By Steve Argyle. Oil on linen board, 9 x 12 in. Card printed in Streets of New Capenna.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Cat%20Collector.jpg" data-title="Cat Collector" data-summary="Original Magic: The Gathering art by Chris Seaman for Foundations." data-details="Artist: Chris Seaman|Card: Cat Collector|Set: Foundations" data-card="https://cards.scryfall.io/normal/front/5/2/526fe356-bff1-4211-9e88-bf913ac76b1d.jpg?1730488601" data-card-alt="Cat Collector Magic card" aria-label="Open Cat Collector enlarged image">
-        <img src="/assets/images/Cat%20Collector.jpg" alt="Cat Collector framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Cat Collector</h2>
-          <p>Original Magic: The Gathering art by Chris Seaman for Foundations.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Cat%20Collector.jpg' data-title='Cat Collector' data-summary='Original Magic: The Gathering art by Chris Seaman for Foundations. Acrylic on board, approx. 12.5 x 16.5 in.' data-details='Artist: Chris Seaman|Medium: Acrylic on board|Size: Approx. 12.5 x 16.5 in.|Card: Cat Collector|Set: Foundations' data-card='https://cards.scryfall.io/normal/front/5/2/526fe356-bff1-4211-9e88-bf913ac76b1d.jpg?1730488601' data-card-alt='Cat Collector Magic card' aria-label='Open Cat Collector enlarged image'>
+          <img src='/assets/images/Cat%20Collector.jpg' alt='Cat Collector framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Cat Collector</h3>
+            <p>By Chris Seaman. Acrylic on board, approx. 12.5 x 16.5 in. Card printed in Foundations.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Corpse%20Augur.jpg" data-title="Corpse Augur" data-summary="Original Magic: The Gathering art by Scott M. Fischer, first printed in Commander 2015." data-details="Artist: Scott M. Fischer|Card: Corpse Augur|Set: Commander 2015" data-card="https://cards.scryfall.io/normal/front/3/b/3b8443d5-8135-4a91-ba4a-6294fff2d43c.jpg?1562703292" data-card-alt="Corpse Augur Magic card" aria-label="Open Corpse Augur enlarged image">
-        <img src="/assets/images/Corpse%20Augur.jpg" alt="Corpse Augur framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Corpse Augur</h2>
-          <p>Original Magic: The Gathering art by Scott M. Fischer, first printed in Commander 2015.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Corpse%20Augur.jpg' data-title='Corpse Augur' data-summary='Original Magic: The Gathering art by Ryan Pancoast for Aetherdrift Commander. Oil on linen, mounted to an aluminum board, 14 x 18 in.' data-details='Artist: Ryan Pancoast|Medium: Oil on linen, mounted to an aluminum board|Size: 14 x 18 in.|Card: Corpse Augur|Set: Aetherdrift Commander' data-card='https://api.scryfall.com/cards/drc/40?format=image&amp;version=normal' data-card-alt='Corpse Augur Magic card from Aetherdrift Commander' aria-label='Open Corpse Augur enlarged image'>
+          <img src='/assets/images/Corpse%20Augur.jpg' alt='Corpse Augur framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Corpse Augur</h3>
+            <p>By Ryan Pancoast. Oil on linen mounted to aluminum board, 14 x 18 in. Card printed in Aetherdrift Commander.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Dead%20Before%20Sunrise.jpg" data-title="Dead Before Sunrise" data-summary="Original Magic: The Gathering art by Alix Branwyn for Outlaws of Thunder Junction Commander." data-details="Artist: Alix Branwyn|Card: Dead Before Sunrise|Set: Outlaws of Thunder Junction Commander" data-card="https://cards.scryfall.io/normal/front/f/2/f2206ff3-f02b-4598-b14b-9db0428f5aeb.jpg?1712353836" data-card-alt="Dead Before Sunrise Magic card" aria-label="Open Dead Before Sunrise enlarged image">
-        <img src="/assets/images/Dead%20Before%20Sunrise.jpg" alt="Dead Before Sunrise framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Dead Before Sunrise</h2>
-          <p>Original Magic: The Gathering art by Alix Branwyn for Outlaws of Thunder Junction Commander.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Dead%20Before%20Sunrise.jpg' data-title='Dead Before Sunrise' data-summary='Original Magic: The Gathering art by Alix Branwyn for Outlaws of Thunder Junction Commander. Oil on board, 18 x 14 in.' data-details='Artist: Alix Branwyn|Medium: Oil on board|Size: 18 x 14 in.|Card: Dead Before Sunrise|Set: Outlaws of Thunder Junction Commander' data-card='https://cards.scryfall.io/normal/front/f/2/f2206ff3-f02b-4598-b14b-9db0428f5aeb.jpg?1712353836' data-card-alt='Dead Before Sunrise Magic card' aria-label='Open Dead Before Sunrise enlarged image'>
+          <img src='/assets/images/Dead%20Before%20Sunrise.jpg' alt='Dead Before Sunrise framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Dead Before Sunrise</h3>
+            <p>By Alix Branwyn. Oil on board, 18 x 14 in. Card printed in Outlaws of Thunder Junction Commander.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Highway%20Robbery.jpg" data-title="Highway Robbery" data-summary="Original Magic: The Gathering art by Scott Murphy for Outlaws of Thunder Junction." data-details="Artist: Scott Murphy|Card: Highway Robbery|Set: Outlaws of Thunder Junction" data-card="https://cards.scryfall.io/normal/front/3/1/31a88429-9204-4a23-a7a8-babbd6bab79f.jpg?1712355775" data-card-alt="Highway Robbery Magic card" aria-label="Open Highway Robbery enlarged image">
-        <img src="/assets/images/Highway%20Robbery.jpg" alt="Highway Robbery framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Highway Robbery</h2>
-          <p>Original Magic: The Gathering art by Scott Murphy for Outlaws of Thunder Junction.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Highway%20Robbery.jpg' data-title='Highway Robbery' data-summary='Original Magic: The Gathering art by Scott Murphy for Outlaws of Thunder Junction. Oil on Masonite board, 16 x 20 in.' data-details='Artist: Scott Murphy|Medium: Oil on Masonite board|Size: 16 x 20 in.|Card: Highway Robbery|Set: Outlaws of Thunder Junction' data-card='https://cards.scryfall.io/normal/front/3/1/31a88429-9204-4a23-a7a8-babbd6bab79f.jpg?1712355775' data-card-alt='Highway Robbery Magic card' aria-label='Open Highway Robbery enlarged image'>
+          <img src='/assets/images/Highway%20Robbery.jpg' alt='Highway Robbery framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Highway Robbery</h3>
+            <p>By Scott Murphy. Oil on Masonite board, 16 x 20 in. Card printed in Outlaws of Thunder Junction.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Phabine%20Color%20Draft.jpg" data-title="Phabine Color Draft" data-summary="Color draft or study for Ryan Pancoast's Phabine, Boss's Confidant, printed in New Capenna Commander." data-details="Artist: Ryan Pancoast|Related card: Phabine, Boss's Confidant|Set: New Capenna Commander|Medium: Color draft or study" data-card="https://cards.scryfall.io/normal/front/f/0/f0f238f6-3578-4e16-bfd0-2f5a452e46fe.jpg?1673481712" data-card-alt="Phabine, Boss's Confidant Magic card" aria-label="Open Phabine Color Draft enlarged image">
-        <img src="/assets/images/Phabine%20Color%20Draft.jpg" alt="Phabine Color Draft framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Phabine Color Draft</h2>
-          <p>Color draft or study for Ryan Pancoast's Phabine, Boss's Confidant, printed in New Capenna Commander.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Phabine%20Color%20Draft.jpg' data-title='Phabine Color Study' data-summary='Color study for Ryan Pancoast&#39;s Phabine, Boss&#39;s Confidant, printed in New Capenna Commander. Oils on board, 5 x 7 in.' data-details='Artist: Ryan Pancoast|Medium: Oils on board|Size: 5 x 7 in.|Related card: Phabine, Boss&#39;s Confidant|Set: New Capenna Commander' data-card='https://cards.scryfall.io/normal/front/f/0/f0f238f6-3578-4e16-bfd0-2f5a452e46fe.jpg?1673481712' data-card-alt='Phabine, Boss&#39;s Confidant Magic card' aria-label='Open Phabine Color Study enlarged image'>
+          <img src='/assets/images/Phabine%20Color%20Draft.jpg' alt='Phabine Color Study framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Phabine Color Study</h3>
+            <p>By Ryan Pancoast. Oils on board, 5 x 7 in. Study for Phabine, Boss&#39;s Confidant.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Phabine%2C%20Boss_s%20Confidant.jpg" data-title="Phabine, Boss's Confidant" data-summary="Original Magic: The Gathering art by Ryan Pancoast for New Capenna Commander." data-details="Artist: Ryan Pancoast|Card: Phabine, Boss's Confidant|Set: New Capenna Commander" data-card="https://cards.scryfall.io/normal/front/f/0/f0f238f6-3578-4e16-bfd0-2f5a452e46fe.jpg?1673481712" data-card-alt="Phabine, Boss's Confidant Magic card" aria-label="Open Phabine, Boss's Confidant enlarged image">
-        <img src="/assets/images/Phabine%2C%20Boss_s%20Confidant.jpg" alt="Phabine, Boss's Confidant framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Phabine, Boss&#39;s Confidant</h2>
-          <p>Original Magic: The Gathering art by Ryan Pancoast for New Capenna Commander.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Phabine%2C%20Boss_s%20Confidant.jpg' data-title='Phabine, Boss&#39;s Confidant' data-summary='Original Magic: The Gathering art by Ryan Pancoast for New Capenna Commander. Oil on canvas, 24 x 30 in.' data-details='Artist: Ryan Pancoast|Medium: Oil on canvas|Size: 24 x 30 in.|Card: Phabine, Boss&#39;s Confidant|Set: New Capenna Commander' data-card='https://cards.scryfall.io/normal/front/f/0/f0f238f6-3578-4e16-bfd0-2f5a452e46fe.jpg?1673481712' data-card-alt='Phabine, Boss&#39;s Confidant Magic card' aria-label='Open Phabine, Boss&#39;s Confidant enlarged image'>
+          <img src='/assets/images/Phabine%2C%20Boss_s%20Confidant.jpg' alt='Phabine, Boss&#39;s Confidant framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Phabine, Boss&#39;s Confidant</h3>
+            <p>By Ryan Pancoast. Oil on canvas, 24 x 30 in. Card printed in New Capenna Commander.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Shock.jpg" data-title="Shock" data-summary="Original Magic: The Gathering art by Eric Wilkerson for the Murders at Karlov Manor printing of Shock." data-details="Artist: Eric Wilkerson|Card: Shock|Set: Murders at Karlov Manor" data-card="https://cards.scryfall.io/normal/front/2/9/298747bb-eb40-4b58-bb22-4ac2bc1d795c.jpg?1706241920" data-card-alt="Shock Magic card from Murders at Karlov Manor" aria-label="Open Shock enlarged image">
-        <img src="/assets/images/Shock.jpg" alt="Shock framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Shock</h2>
-          <p>Original Magic: The Gathering art by Eric Wilkerson for the Murders at Karlov Manor printing.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Shock.jpg' data-title='Shock' data-summary='Original Magic: The Gathering art by Eric Wilkerson for the Murders at Karlov Manor printing of Shock. Oil on panel, 14 x 18 in.' data-details='Artist: Eric Wilkerson|Medium: Oil on panel|Size: 14 x 18 in.|Card: Shock|Set: Murders at Karlov Manor' data-card='https://cards.scryfall.io/normal/front/2/9/298747bb-eb40-4b58-bb22-4ac2bc1d795c.jpg?1706241920' data-card-alt='Shock Magic card from Murders at Karlov Manor' aria-label='Open Shock enlarged image'>
+          <img src='/assets/images/Shock.jpg' alt='Shock framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Shock</h3>
+            <p>By Eric Wilkerson. Oil on panel, 14 x 18 in. Card printed in Murders at Karlov Manor.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Unforgiving%20Aim.jpg" data-title="Unforgiving Aim" data-summary="Original Magic: The Gathering art by Filip Burburan for Lorwyn Eclipsed." data-details="Artist: Filip Burburan|Card: Unforgiving Aim|Set: Lorwyn Eclipsed" data-card="https://cards.scryfall.io/normal/front/0/b/0bef3905-24f8-419b-aeca-396adfc6d0dc.jpg?1767872046" data-card-alt="Unforgiving Aim Magic card" aria-label="Open Unforgiving Aim enlarged image">
-        <img src="/assets/images/Unforgiving%20Aim.jpg" alt="Unforgiving Aim framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Unforgiving Aim</h2>
-          <p>Original Magic: The Gathering art by Filip Burburan for Lorwyn Eclipsed.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Unforgiving%20Aim.jpg' data-title='Unforgiving Aim' data-summary='Original Magic: The Gathering art by Filip Burburan for Lorwyn Eclipsed. Acrylics on board, 14.5 x 10.6 in.' data-details='Artist: Filip Burburan|Medium: Acrylics on board|Size: 14.5 x 10.6 in.|Card: Unforgiving Aim|Set: Lorwyn Eclipsed' data-card='https://cards.scryfall.io/normal/front/0/b/0bef3905-24f8-419b-aeca-396adfc6d0dc.jpg?1767872046' data-card-alt='Unforgiving Aim Magic card' aria-label='Open Unforgiving Aim enlarged image'>
+          <img src='/assets/images/Unforgiving%20Aim.jpg' alt='Unforgiving Aim framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Unforgiving Aim</h3>
+            <p>By Filip Burburan. Acrylics on board, 14.5 x 10.6 in. Card printed in Lorwyn Eclipsed.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Vernal%20Sovereign.jpg" data-title="Vernal Sovereign" data-summary="Original Magic: The Gathering art by Aaron Miller, printed in Ravnica: Clue Edition and Lorwyn Eclipsed Commander." data-details="Artist: Aaron Miller|Card: Vernal Sovereign|Set: Ravnica: Clue Edition; also Lorwyn Eclipsed Commander" data-card="https://cards.scryfall.io/normal/front/8/d/8d4ebe8b-8d2f-4534-994e-e387f23cbe1d.jpg?1706239702" data-card-alt="Vernal Sovereign Magic card" aria-label="Open Vernal Sovereign enlarged image">
-        <img src="/assets/images/Vernal%20Sovereign.jpg" alt="Vernal Sovereign framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Vernal Sovereign</h2>
-          <p>Original Magic: The Gathering art by Aaron Miller, printed in Ravnica: Clue Edition and Lorwyn Eclipsed Commander.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Vernal%20Sovereign.jpg' data-title='Vernal Sovereign' data-summary='Original Magic: The Gathering art by Aaron Miller, printed in Ravnica: Clue Edition and Lorwyn Eclipsed Commander. Oil on panel, 16 x 20 in.' data-details='Artist: Aaron Miller|Medium: Oil on panel|Size: 16 x 20 in.|Card: Vernal Sovereign|Set: Ravnica: Clue Edition; also Lorwyn Eclipsed Commander' data-card='https://cards.scryfall.io/normal/front/8/d/8d4ebe8b-8d2f-4534-994e-e387f23cbe1d.jpg?1706239702' data-card-alt='Vernal Sovereign Magic card' aria-label='Open Vernal Sovereign enlarged image'>
+          <img src='/assets/images/Vernal%20Sovereign.jpg' alt='Vernal Sovereign framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Vernal Sovereign</h3>
+            <p>By Aaron Miller. Oil on panel, 16 x 20 in. Printed in Ravnica: Clue Edition and Lorwyn Eclipsed Commander.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
 
-    <figure class="art-card">
-      <a href="/assets/images/Willowrush%20Verge.jpg" data-title="Willowrush Verge" data-summary="Original Magic: The Gathering art by Aaron Miller for Aetherdrift." data-details="Artist: Aaron Miller|Card: Willowrush Verge|Set: Aetherdrift" data-card="https://cards.scryfall.io/normal/front/7/5/758d93d5-3f66-4395-a928-000485396c87.jpg?1773857344" data-card-alt="Willowrush Verge Magic card" aria-label="Open Willowrush Verge enlarged image">
-        <img src="/assets/images/Willowrush%20Verge.jpg" alt="Willowrush Verge framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Willowrush Verge</h2>
-          <p>Original Magic: The Gathering art by Aaron Miller for Aetherdrift.</p>
-          <span class="meta">Magic: The Gathering</span>
-        </figcaption>
-      </a>
-    </figure>
-
-    <figure class="art-card">
-      <a href="/assets/images/Jane%20Billich.jpg" data-title="Portrait of Jane" data-summary="Portrait of Jane by Charles Billich. Oil on canvas; Jane Billich is Charles Billich's daughter, and the painting once belonged to her." data-details="Artist: Charles Billich|Title: Portrait of Jane|Medium: Oil on canvas|Provenance: Once belonged to Jane Billich, the artist's daughter" aria-label="Open Portrait of Jane enlarged image">
-        <img src="/assets/images/Jane%20Billich.jpg" alt="Portrait of Jane by Charles Billich framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Portrait of Jane</h2>
-          <p>By Charles Billich. Oil on canvas; Jane Billich is Charles Billich's daughter, and the painting once belonged to her.</p>
-          <span class="meta">Traditional artwork</span>
-        </figcaption>
-      </a>
-    </figure>
-
-    <figure class="art-card">
-      <a href="/assets/images/Plotting%20a%20Choreogram%2C%20London.jpg" data-title="Plotting a Choreogram, London" data-summary="A figurative work by Charles Billich." data-details="Artist: Charles Billich|Title: Plotting a Choreogram, London" aria-label="Open Plotting a Choreogram, London enlarged image">
-        <img src="/assets/images/Plotting%20a%20Choreogram%2C%20London.jpg" alt="Plotting a Choreogram, London by Charles Billich framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Plotting a Choreogram, London</h2>
-          <p>A figurative work by Charles Billich.</p>
-          <span class="meta">Traditional artwork</span>
-        </figcaption>
-      </a>
-    </figure>
-
-    <figure class="art-card">
-      <a href="/assets/images/Shiprock%20Spirit%20Trail.jpg" data-title="Shiprock Spirit Trail" data-summary="Shiprock Spirit Trail by Todd Abbott Winters. Acrylics, 2026." data-details="Artist: Todd Abbott Winters|Title: Shiprock Spirit Trail|Medium: Acrylics|Year: 2026" aria-label="Open Shiprock Spirit Trail enlarged image">
-        <img src="/assets/images/Shiprock%20Spirit%20Trail.jpg" alt="Shiprock Spirit Trail by Todd Abbott Winters framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Shiprock Spirit Trail</h2>
-          <p>By Todd Abbott Winters. Acrylics, 2026.</p>
-          <span class="meta">Traditional artwork</span>
-        </figcaption>
-      </a>
-    </figure>
-
-    <figure class="art-card">
-      <a href="/assets/images/The%20Lake.jpg" data-title="The Lake" data-summary="The Lake by Ken Fitz. Unknown medium, 1981; a view from the family cabin on Patten Lake in Ontario." data-details="Artist: Ken Fitz|Title: The Lake|Medium: Unknown|Year: 1981|Subject: View from the family cabin on Patten Lake in Ontario" aria-label="Open The Lake enlarged image">
-        <img src="/assets/images/The%20Lake.jpg" alt="The Lake by Ken Fitz framed original artwork" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>The Lake</h2>
-          <p>By Ken Fitz. Unknown medium, 1981; a view from the family cabin on Patten Lake in Ontario.</p>
-          <span class="meta">Family artwork</span>
-        </figcaption>
-      </a>
-    </figure>
-
-    <figure class="art-card">
-      <a href="/assets/images/Untitled%20Sarah%20Fitz.jpg" data-title="Untitled" data-summary="Untitled work by Sarah Fitz. Unknown medium, 2021." data-details="Artist: Sarah Fitz|Title: Untitled|Medium: Unknown|Year: 2021" aria-label="Open Untitled Sarah Fitz enlarged image">
-        <img src="/assets/images/Untitled%20Sarah%20Fitz.jpg" alt="Untitled work by Sarah Fitz" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Untitled Sarah Fitz</h2>
-          <p>By Sarah Fitz. Unknown medium, 2021.</p>
-          <span class="meta">Family artwork</span>
-        </figcaption>
-      </a>
-    </figure>
-
-    <figure class="art-card">
-      <a href="/assets/images/Woman%20and%20Knight.jpg" data-title="Woman and Knight" data-summary="Oil painting by an unknown artist, likely mid to late 19th century." data-details="Artist: Unknown|Title: Woman and Knight|Medium: Oil|Date: Mid to late 19th century" aria-label="Open Woman and Knight enlarged image">
-        <img src="/assets/images/Woman%20and%20Knight.jpg" alt="Woman and Knight framed original oil painting" loading="lazy" decoding="async">
-        <figcaption>
-          <h2>Woman and Knight</h2>
-          <p>Oil painting by an unknown artist, likely mid to late 19th century.</p>
-          <span class="meta">Traditional artwork</span>
-        </figcaption>
-      </a>
-    </figure>
+      <figure class='art-card'>
+        <a href='/assets/images/Willowrush%20Verge.jpg' data-title='Willowrush Verge' data-summary='Original Magic: The Gathering art by Aaron Miller for Aetherdrift. Oil on panel, 16 x 20 in.' data-details='Artist: Aaron Miller|Medium: Oil on panel|Size: 16 x 20 in.|Card: Willowrush Verge|Set: Aetherdrift' data-card='https://cards.scryfall.io/normal/front/7/5/758d93d5-3f66-4395-a928-000485396c87.jpg?1773857344' data-card-alt='Willowrush Verge Magic card' aria-label='Open Willowrush Verge enlarged image'>
+          <img src='/assets/images/Willowrush%20Verge.jpg' alt='Willowrush Verge framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Willowrush Verge</h3>
+            <p>By Aaron Miller. Oil on panel, 16 x 20 in. Card printed in Aetherdrift.</p>
+            <span class='meta'>Magic: The Gathering</span>
+          </figcaption>
+        </a>
+      </figure>
+    </div>
   </section>
 
-  <p class="art-note">Magic: The Gathering card images are shown as printed-card references via Scryfall. Card images are copyright Wizards of the Coast and their respective artists.</p>
+  <section class='art-section' aria-labelledby='collected-art-heading'>
+    <div class='art-section-header'>
+      <div>
+        <h2 id='collected-art-heading'>Other Collected Artwork</h2>
+        <p>Traditional pieces in the collection outside of Magic: The Gathering.</p>
+      </div>
+      <span class='section-count'>4 pieces</span>
+    </div>
+    <div class='artwork-grid'>
+      <figure class='art-card'>
+        <a href='/assets/images/Jane%20Billich.jpg' data-title='Portrait of Jane' data-summary='Portrait of Jane by Charles Billich. Oil on artist board, signed at lower right and inscribed to the verso; framed. The painting once belonged to Jane Billich, Charles Billich&#39;s daughter.' data-details='Artist: Charles Billich|Title: Portrait of Jane|Medium: Oil on artist board|Size: Board 24 x 36 in.|Signature: Signed at lower right|Notes: Inscribed to the verso; framed|Provenance: Once belonged to Jane Billich, the artist&#39;s daughter' aria-label='Open Portrait of Jane enlarged image'>
+          <img src='/assets/images/Jane%20Billich.jpg' alt='Portrait of Jane by Charles Billich framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Portrait of Jane</h3>
+            <p>By Charles Billich. Oil on artist board, signed lower right and inscribed verso. Board 24 x 36 in.</p>
+            <span class='meta'>Collected artwork</span>
+          </figcaption>
+        </a>
+      </figure>
+
+      <figure class='art-card'>
+        <a href='/assets/images/Plotting%20a%20Choreogram%2C%20London.jpg' data-title='Plotting a Choreogram, London' data-summary='Plotting a Choreogram, London by Charles Billich. Oil and oil crayon on paper, signed and titled to the lower margin; matted and framed below glass.' data-details='Artist: Charles Billich|Title: Plotting a Choreogram, London|Medium: Oil and oil crayon on paper|Size: Sheet sight 19 1/2 x 21 1/4 in.|Signature: Signed and titled to lower margin|Presentation: Matted and framed below glass' aria-label='Open Plotting a Choreogram, London enlarged image'>
+          <img src='/assets/images/Plotting%20a%20Choreogram%2C%20London.jpg' alt='Plotting a Choreogram, London by Charles Billich framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Plotting a Choreogram, London</h3>
+            <p>By Charles Billich. Oil and oil crayon on paper, signed and titled. Sheet sight 19 1/2 x 21 1/4 in.</p>
+            <span class='meta'>Collected artwork</span>
+          </figcaption>
+        </a>
+      </figure>
+
+      <figure class='art-card'>
+        <a href='/assets/images/Shiprock%20Spirit%20Trail.jpg' data-title='Shiprock Spirit Trail' data-summary='Shiprock Spirit Trail by Todd Abbott Winters. Acrylics on canvas, 2026, 4 ft x 3 ft.' data-details='Artist: Todd Abbott Winters|Title: Shiprock Spirit Trail|Medium: Acrylics on canvas|Size: 4 ft x 3 ft|Year: 2026' aria-label='Open Shiprock Spirit Trail enlarged image'>
+          <img src='/assets/images/Shiprock%20Spirit%20Trail.jpg' alt='Shiprock Spirit Trail by Todd Abbott Winters framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Shiprock Spirit Trail</h3>
+            <p>By Todd Abbott Winters. Acrylics on canvas, 2026. 4 ft x 3 ft.</p>
+            <span class='meta'>Collected artwork</span>
+          </figcaption>
+        </a>
+      </figure>
+
+      <figure class='art-card'>
+        <a href='/assets/images/Woman%20and%20Knight.jpg' data-title='Woman and Knight' data-summary='Oil on canvas by an unknown artist, signed M. A... at lower right and presented in a giltwood frame. Likely mid to late 19th century.' data-details='Artist: Unknown, signed M. A...|Title: Woman and Knight|Medium: Oil on canvas|Date: Mid to late 19th century|Stretcher size: 24 x 30 in.|Frame dimensions: 29 1/8 x 35 1/4 in.|Presentation: Giltwood frame' aria-label='Open Woman and Knight enlarged image'>
+          <img src='/assets/images/Woman%20and%20Knight.jpg' alt='Woman and Knight framed original oil painting' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Woman and Knight</h3>
+            <p>Unknown artist, signed M. A... Oil on canvas, likely mid to late 19th century. Stretcher 24 x 30 in.</p>
+            <span class='meta'>Collected artwork</span>
+          </figcaption>
+        </a>
+      </figure>
+    </div>
+  </section>
+
+  <section class='art-section' aria-labelledby='family-art-heading'>
+    <div class='art-section-header'>
+      <div>
+        <h2 id='family-art-heading'>Family Artwork</h2>
+        <p>Pieces made by family, kept here with the rest of the collection.</p>
+      </div>
+      <span class='section-count'>2 pieces</span>
+    </div>
+    <div class='artwork-grid'>
+      <figure class='art-card'>
+        <a href='/assets/images/The%20Lake.jpg' data-title='The Lake' data-summary='The Lake by Ken Fitz. Oils on wood board, 1981; a view from the family cabin on Patten Lake in Ontario.' data-details='Artist: Ken Fitz|Title: The Lake|Medium: Oils on wood board|Size: 24 x 17.5 in.|Year: 1981|Subject: View from the family cabin on Patten Lake in Ontario' aria-label='Open The Lake enlarged image'>
+          <img src='/assets/images/The%20Lake.jpg' alt='The Lake by Ken Fitz framed original artwork' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>The Lake</h3>
+            <p>By Ken Fitz. Oils on wood board, 1981. 24 x 17.5 in.; Patten Lake in Ontario.</p>
+            <span class='meta'>Family artwork</span>
+          </figcaption>
+        </a>
+      </figure>
+
+      <figure class='art-card'>
+        <a href='/assets/images/Untitled%20Sarah%20Fitz.jpg' data-title='Untitled Sarah Fitz' data-summary='Untitled paint pour by Sarah Fitz, 2021. 5 ft x 4 ft.' data-details='Artist: Sarah Fitz|Title: Untitled|Medium: Paint pour|Size: 5 ft x 4 ft|Year: 2021' aria-label='Open Untitled Sarah Fitz enlarged image'>
+          <img src='/assets/images/Untitled%20Sarah%20Fitz.jpg' alt='Untitled paint pour by Sarah Fitz' loading='lazy' decoding='async'>
+          <figcaption>
+            <h3>Untitled Sarah Fitz</h3>
+            <p>By Sarah Fitz. Paint pour, 2021. 5 ft x 4 ft.</p>
+            <span class='meta'>Family artwork</span>
+          </figcaption>
+        </a>
+      </figure>
+    </div>
+  </section>
+
+  <p class='art-note'>Magic: The Gathering card images are shown as printed-card references via Scryfall. Card images are copyright Wizards of the Coast and their respective artists.</p>
 </main>
 
-<div class="art-modal" id="art-modal" aria-hidden="true">
-  <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <button class="modal-close" type="button" data-close-modal aria-label="Close enlarged artwork">&times;</button>
-    <button class="modal-nav prev" type="button" data-prev-art aria-label="Previous artwork">&lsaquo;</button>
-    <button class="modal-nav next" type="button" data-next-art aria-label="Next artwork">&rsaquo;</button>
-    <div class="modal-layout">
-      <div class="modal-media">
-        <div class="modal-toolbar">
-          <span id="modal-counter">1 of 17</span>
-          <div class="modal-toolbar-actions" aria-label="Artwork zoom controls">
-            <button class="viewer-button" type="button" data-zoom-out aria-label="Zoom out">-</button>
-            <span class="zoom-level" id="zoom-level">100%</span>
-            <button class="viewer-button" type="button" data-zoom-in aria-label="Zoom in">+</button>
-            <button class="viewer-button" type="button" data-zoom-reset>Reset</button>
+<div class='art-modal' id='art-modal' aria-hidden='true'>
+  <section class='modal-panel' role='dialog' aria-modal='true' aria-labelledby='modal-title'>
+    <button class='modal-close' type='button' data-close-modal aria-label='Close enlarged artwork'>&times;</button>
+    <button class='modal-nav prev' type='button' data-prev-art aria-label='Previous artwork'>&lsaquo;</button>
+    <button class='modal-nav next' type='button' data-next-art aria-label='Next artwork'>&rsaquo;</button>
+    <div class='modal-layout'>
+      <div class='modal-media'>
+        <div class='modal-toolbar'>
+          <span id='modal-counter'>1 of 17</span>
+          <div class='modal-toolbar-actions' aria-label='Artwork zoom controls'>
+            <button class='viewer-button' type='button' data-zoom-out aria-label='Zoom out'>-</button>
+            <span class='zoom-level' id='zoom-level'>100%</span>
+            <button class='viewer-button' type='button' data-zoom-in aria-label='Zoom in'>+</button>
+            <button class='viewer-button' type='button' data-zoom-reset>Reset</button>
           </div>
         </div>
-        <div class="modal-art-stage" id="modal-art-stage" aria-label="Zoomable artwork image">
-          <div class="modal-art-surface" id="modal-art-surface">
-            <img class="modal-art-img" id="modal-art-img" alt="">
+        <div class='modal-art-stage' id='modal-art-stage' aria-label='Zoomable artwork image'>
+          <div class='modal-art-surface' id='modal-art-surface'>
+            <img class='modal-art-img' id='modal-art-img' alt=''>
           </div>
         </div>
       </div>
-      <aside class="modal-side">
-        <div class="modal-copy">
-          <h2 id="modal-title"></h2>
-          <p id="modal-summary"></p>
-          <dl class="modal-details" id="modal-details"></dl>
+      <aside class='modal-side'>
+        <div class='modal-copy'>
+          <h2 id='modal-title'></h2>
+          <p id='modal-summary'></p>
+          <dl class='modal-details' id='modal-details'></dl>
         </div>
-        <div class="modal-card-ref" id="modal-card-ref">
+        <div class='modal-card-ref' id='modal-card-ref'>
           <h3>Printed card reference</h3>
-          <img id="modal-card-img" alt="">
+          <img id='modal-card-img' alt=''>
           <p>Shown to connect the original Magic artwork with its card printing.</p>
         </div>
       </aside>
@@ -319,8 +356,8 @@
   </section>
 </div>
 
-<div data-include="/partials/footer.html"></div>
-<script src="/assets/site.js" defer></script>
+<div data-include='/partials/footer.html'></div>
+<script src='/assets/site.js' defer></script>
 <script>
 (function(){
   const modal = document.getElementById('art-modal');
@@ -338,6 +375,16 @@
   let currentIndex = 0;
   let zoom = 1;
   let baseWidth = 0;
+
+  function escapeHtml(value){
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      '\'': '&#39;'
+    }[char]));
+  }
 
   function detailRows(detailText){
     return (detailText || '').split('|').filter(Boolean).map((item) => {
@@ -385,7 +432,7 @@
 
   function renderCurrentArt(){
     const link = artLinks[currentIndex];
-    const title = link.dataset.title || link.querySelector('h2')?.textContent || 'Artwork';
+    const title = link.dataset.title || link.querySelector('h3')?.textContent || 'Artwork';
     const image = link.getAttribute('href');
     const imageAlt = link.querySelector('img')?.alt || title;
     zoom = 1;
@@ -393,7 +440,7 @@
     modalTitle.textContent = title;
     modalSummary.textContent = link.dataset.summary || '';
     modalCounter.textContent = `${currentIndex + 1} of ${artLinks.length}`;
-    modalDetails.innerHTML = detailRows(link.dataset.details).map((row) => `<div><dt>${row.label}</dt><dd>${row.value}</dd></div>`).join('');
+    modalDetails.innerHTML = detailRows(link.dataset.details).map((row) => `<div><dt>${escapeHtml(row.label)}</dt><dd>${escapeHtml(row.value)}</dd></div>`).join('');
     modalArtStage.classList.remove('zoomed');
     modalArt.style.width = '';
     modalArt.onload = fitArtToStage;
