@@ -26,34 +26,56 @@
   .art-card .meta{display:block;margin-top:10px;color:#4b5563;font-size:.84rem;font-weight:700;letter-spacing:.01em}
   .art-note{margin:22px 0 0;color:var(--muted);font-size:.88rem}
 
-  .art-modal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(17,24,39,.74)}
+  .art-modal{position:fixed;inset:0;z-index:10000;display:none;align-items:stretch;justify-content:center;padding:10px;background:rgba(17,24,39,.82)}
   .art-modal.open{display:flex}
-  .modal-panel{position:relative;width:min(1180px,100%);max-height:92vh;overflow:auto;border-radius:14px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.34)}
-  .modal-close{position:absolute;top:10px;right:10px;z-index:2;width:38px;height:38px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--text);font-size:1.4rem;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.12)}
-  .modal-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.9fr);gap:0}
-  .modal-media{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;padding:18px;background:#f6f7f9;border-right:1px solid var(--border)}
-  .modal-art-img{width:100%;max-height:76vh;object-fit:contain;border-radius:10px;background:#fff}
-  .modal-card-ref{display:none;grid-template-columns:96px minmax(0,1fr);gap:12px;align-items:center;padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff}
-  .modal-card-ref.has-card{display:grid}
-  .modal-card-ref img{width:96px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
-  .modal-card-ref h3{margin:0 0 4px;font-size:.95rem;color:var(--text)}
-  .modal-card-ref p{margin:0;color:var(--muted);font-size:.85rem;line-height:1.4}
-  .modal-copy{padding:26px 26px 24px}
-  .modal-copy h2{margin:0 42px 10px 0;color:var(--brand);font-size:clamp(1.45rem,3vw,2.1rem);line-height:1.1}
-  .modal-copy p{margin:0 0 18px;color:var(--muted)}
-  .modal-details{display:grid;gap:8px;margin:0;padding:0}
-  .modal-details div{display:grid;grid-template-columns:88px minmax(0,1fr);gap:10px;padding:9px 0;border-top:1px solid var(--border)}
+  .modal-panel{position:relative;width:min(1680px,100%);height:calc(100dvh - 20px);max-height:calc(100dvh - 20px);overflow:hidden;border-radius:12px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.38)}
+  .modal-close{position:absolute;top:12px;right:12px;z-index:4;width:42px;height:42px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--text);font-size:1.5rem;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.16)}
+  .modal-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,420px);height:100%;min-height:0}
+  .modal-media{display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;min-width:0;min-height:0;padding:14px;background:#111827;border-right:1px solid #111827}
+  .modal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#e5e7eb;font-size:.9rem}
+  .modal-toolbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .viewer-button{border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.08);color:#fff;padding:.45rem .72rem;font-weight:800;cursor:pointer}
+  .viewer-button:hover{background:rgba(255,255,255,.16);text-decoration:none}
+  .zoom-level{min-width:48px;text-align:center;color:#f9fafb;font-weight:800}
+  .modal-art-stage{min-height:0;overflow:auto;border-radius:10px;background:#0b1020;cursor:zoom-in;scrollbar-color:#6b7280 #111827}
+  .modal-art-surface{min-width:100%;min-height:100%;display:flex;align-items:center;justify-content:center;padding:8px}
+  .modal-art-stage.zoomed{cursor:zoom-out}
+  .modal-art-stage.zoomed .modal-art-surface{align-items:flex-start;justify-content:flex-start}
+  .modal-art-img{display:block;width:auto;height:auto;max-width:none;max-height:none;border-radius:8px;background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.32)}
+  .modal-side{min-height:0;overflow:auto;background:#fff;padding:26px 24px 24px}
+  .modal-copy h2{margin:0 48px 10px 0;color:var(--brand);font-size:clamp(1.55rem,3vw,2.25rem);line-height:1.08}
+  .modal-copy p{margin:0 0 16px;color:var(--muted)}
+  .modal-details{display:grid;gap:0;margin:0 0 20px;padding:0}
+  .modal-details div{display:grid;grid-template-columns:94px minmax(0,1fr);gap:10px;padding:9px 0;border-top:1px solid var(--border)}
   .modal-details dt{font-weight:800;color:var(--text)}
   .modal-details dd{margin:0;color:#4b5563}
+  .modal-card-ref{display:none;margin-top:16px;padding-top:18px;border-top:1px solid var(--border)}
+  .modal-card-ref.has-card{display:block}
+  .modal-card-ref h3{margin:0 0 10px;font-size:1rem;color:var(--text)}
+  .modal-card-ref img{display:block;width:min(100%,340px);margin-inline:auto;border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.22)}
+  .modal-card-ref p{margin:12px 0 0;color:var(--muted);font-size:.9rem;line-height:1.45}
+  .modal-nav{position:absolute;top:50%;z-index:3;display:grid;place-items:center;width:46px;height:64px;transform:translateY(-50%);border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(17,24,39,.6);color:#fff;font-size:2.1rem;line-height:1;cursor:pointer;box-shadow:0 10px 28px rgba(0,0,0,.28)}
+  .modal-nav:hover{background:rgba(17,24,39,.82)}
+  .modal-nav.prev{left:18px}
+  .modal-nav.next{right:438px}
   body.modal-open{overflow:hidden}
 
-  @media (max-width:860px){
-    .art-modal{padding:12px}
-    .modal-layout{grid-template-columns:1fr}
-    .modal-media{border-right:0;border-bottom:1px solid var(--border)}
-    .modal-art-img{max-height:58vh}
+  @media (max-width:980px){
+    .art-modal{padding:0}
+    .modal-panel{width:100%;height:100dvh;max-height:100dvh;border-radius:0}
+    .modal-layout{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+    .modal-media{border-right:0;padding:10px}
+    .modal-side{max-height:42vh;padding:18px}
+    .modal-card-ref img{width:min(100%,260px)}
+    .modal-nav{top:42%;width:42px;height:58px}
+    .modal-nav.prev{left:10px}
+    .modal-nav.next{right:10px}
   }
   @media (max-width:760px){.artwork-intro{grid-template-columns:1fr}.collection-count{justify-self:start}.artwork-grid{grid-template-columns:1fr}}
+  @media (max-width:560px){
+    .modal-toolbar{align-items:flex-start;flex-direction:column}
+    .modal-details div{grid-template-columns:1fr;gap:2px}
+  }
 </style>
 </head>
 <body>
@@ -262,22 +284,37 @@
 <div class="art-modal" id="art-modal" aria-hidden="true">
   <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <button class="modal-close" type="button" data-close-modal aria-label="Close enlarged artwork">&times;</button>
+    <button class="modal-nav prev" type="button" data-prev-art aria-label="Previous artwork">&lsaquo;</button>
+    <button class="modal-nav next" type="button" data-next-art aria-label="Next artwork">&rsaquo;</button>
     <div class="modal-layout">
       <div class="modal-media">
-        <img class="modal-art-img" id="modal-art-img" alt="">
-        <div class="modal-card-ref" id="modal-card-ref">
-          <img id="modal-card-img" alt="">
-          <div>
-            <h3>Printed card reference</h3>
-            <p>Shown to connect the original Magic artwork with its card printing.</p>
+        <div class="modal-toolbar">
+          <span id="modal-counter">1 of 17</span>
+          <div class="modal-toolbar-actions" aria-label="Artwork zoom controls">
+            <button class="viewer-button" type="button" data-zoom-out aria-label="Zoom out">-</button>
+            <span class="zoom-level" id="zoom-level">100%</span>
+            <button class="viewer-button" type="button" data-zoom-in aria-label="Zoom in">+</button>
+            <button class="viewer-button" type="button" data-zoom-reset>Reset</button>
+          </div>
+        </div>
+        <div class="modal-art-stage" id="modal-art-stage" aria-label="Zoomable artwork image">
+          <div class="modal-art-surface" id="modal-art-surface">
+            <img class="modal-art-img" id="modal-art-img" alt="">
           </div>
         </div>
       </div>
-      <div class="modal-copy">
-        <h2 id="modal-title"></h2>
-        <p id="modal-summary"></p>
-        <dl class="modal-details" id="modal-details"></dl>
-      </div>
+      <aside class="modal-side">
+        <div class="modal-copy">
+          <h2 id="modal-title"></h2>
+          <p id="modal-summary"></p>
+          <dl class="modal-details" id="modal-details"></dl>
+        </div>
+        <div class="modal-card-ref" id="modal-card-ref">
+          <h3>Printed card reference</h3>
+          <img id="modal-card-img" alt="">
+          <p>Shown to connect the original Magic artwork with its card printing.</p>
+        </div>
+      </aside>
     </div>
   </section>
 </div>
@@ -288,12 +325,19 @@
 (function(){
   const modal = document.getElementById('art-modal');
   const modalArt = document.getElementById('modal-art-img');
+  const modalArtStage = document.getElementById('modal-art-stage');
   const modalTitle = document.getElementById('modal-title');
   const modalSummary = document.getElementById('modal-summary');
   const modalDetails = document.getElementById('modal-details');
   const modalCardRef = document.getElementById('modal-card-ref');
   const modalCardImg = document.getElementById('modal-card-img');
+  const modalCounter = document.getElementById('modal-counter');
+  const zoomLevel = document.getElementById('zoom-level');
+  const artLinks = [...document.querySelectorAll('.art-card a')];
   let lastFocus = null;
+  let currentIndex = 0;
+  let zoom = 1;
+  let baseWidth = 0;
 
   function detailRows(detailText){
     return (detailText || '').split('|').filter(Boolean).map((item) => {
@@ -303,16 +347,59 @@
     });
   }
 
-  function openModal(link){
-    lastFocus = document.activeElement;
+  function fitArtToStage(){
+    if (!modalArt.naturalWidth || !modalArt.naturalHeight) return;
+    const bounds = modalArtStage.getBoundingClientRect();
+    const pad = 18;
+    const maxWidth = Math.max(180, bounds.width - pad);
+    const maxHeight = Math.max(180, bounds.height - pad);
+    const aspect = modalArt.naturalWidth / modalArt.naturalHeight;
+    let width = Math.min(modalArt.naturalWidth, maxWidth);
+    let height = width / aspect;
+    if (height > maxHeight) {
+      height = Math.min(modalArt.naturalHeight, maxHeight);
+      width = height * aspect;
+    }
+    baseWidth = Math.max(180, width);
+    applyZoom(true);
+  }
+
+  function applyZoom(keepScroll){
+    const previousLeft = modalArtStage.scrollLeft;
+    const previousTop = modalArtStage.scrollTop;
+    modalArtStage.classList.toggle('zoomed', zoom > 1.01);
+    modalArt.style.width = `${Math.round(baseWidth * zoom)}px`;
+    zoomLevel.textContent = `${Math.round(zoom * 100)}%`;
+    if (keepScroll) {
+      modalArtStage.scrollLeft = previousLeft;
+      modalArtStage.scrollTop = previousTop;
+    } else {
+      modalArtStage.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function setZoom(nextZoom, keepScroll){
+    zoom = Math.min(4, Math.max(1, nextZoom));
+    applyZoom(keepScroll);
+  }
+
+  function renderCurrentArt(){
+    const link = artLinks[currentIndex];
     const title = link.dataset.title || link.querySelector('h2')?.textContent || 'Artwork';
     const image = link.getAttribute('href');
     const imageAlt = link.querySelector('img')?.alt || title;
+    zoom = 1;
+    baseWidth = 0;
     modalTitle.textContent = title;
     modalSummary.textContent = link.dataset.summary || '';
+    modalCounter.textContent = `${currentIndex + 1} of ${artLinks.length}`;
+    modalDetails.innerHTML = detailRows(link.dataset.details).map((row) => `<div><dt>${row.label}</dt><dd>${row.value}</dd></div>`).join('');
+    modalArtStage.classList.remove('zoomed');
+    modalArt.style.width = '';
+    modalArt.onload = fitArtToStage;
     modalArt.src = image;
     modalArt.alt = imageAlt;
-    modalDetails.innerHTML = detailRows(link.dataset.details).map((row) => `<div><dt>${row.label}</dt><dd>${row.value}</dd></div>`).join('');
+    modalArtStage.scrollTo({ left: 0, top: 0 });
 
     if (link.dataset.card) {
       modalCardImg.src = link.dataset.card;
@@ -323,11 +410,17 @@
       modalCardImg.alt = '';
       modalCardRef.classList.remove('has-card');
     }
+  }
 
+  function openModal(index){
+    lastFocus = document.activeElement;
+    currentIndex = index;
+    renderCurrentArt();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
     modal.querySelector('[data-close-modal]').focus();
+    requestAnimationFrame(fitArtToStage);
   }
 
   function closeModal(){
@@ -339,10 +432,15 @@
     if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
   }
 
-  document.querySelectorAll('.art-card a').forEach((link) => {
+  function moveArt(delta){
+    currentIndex = (currentIndex + delta + artLinks.length) % artLinks.length;
+    renderCurrentArt();
+  }
+
+  artLinks.forEach((link, index) => {
     link.addEventListener('click', (event) => {
       event.preventDefault();
-      openModal(link);
+      openModal(index);
     });
   });
 
@@ -350,8 +448,29 @@
     if (event.target === modal || event.target.closest('[data-close-modal]')) closeModal();
   });
 
+  modalArtStage.addEventListener('click', (event) => {
+    if (event.target !== modalArt) return;
+    setZoom(zoom > 1.01 ? 1 : 2, false);
+  });
+
+  document.querySelector('[data-prev-art]').addEventListener('click', () => moveArt(-1));
+  document.querySelector('[data-next-art]').addEventListener('click', () => moveArt(1));
+  document.querySelector('[data-zoom-in]').addEventListener('click', () => setZoom(zoom + .35, true));
+  document.querySelector('[data-zoom-out]').addEventListener('click', () => setZoom(zoom - .35, true));
+  document.querySelector('[data-zoom-reset]').addEventListener('click', () => setZoom(1, false));
+
+  window.addEventListener('resize', () => {
+    if (modal.classList.contains('open')) fitArtToStage();
+  });
+
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && modal.classList.contains('open')) closeModal();
+    if (!modal.classList.contains('open')) return;
+    if (event.key === 'Escape') closeModal();
+    if (event.key === 'ArrowLeft') moveArt(-1);
+    if (event.key === 'ArrowRight') moveArt(1);
+    if (event.key === '+' || event.key === '=') setZoom(zoom + .35, true);
+    if (event.key === '-') setZoom(zoom - .35, true);
+    if (event.key === '0') setZoom(1, false);
   });
 })();
 </script>
