@@ -237,20 +237,25 @@
     if (icon) icon.classList.add('pin-drop');
   }
   function arcPoints(start, end, frames){
-    const dLat = end[0] - start[0];
-    const dLng = end[1] - start[1];
-    const mid = [(start[0] + end[0]) / 2, (start[1] + end[1]) / 2];
-    const perp = [-dLng, dLat];
-    const len = Math.hypot(perp[0], perp[1]) || 1;
-    const lift = Math.min(28, Math.max(6, Math.hypot(dLat, dLng) * 0.28));
-    const ctrl = [mid[0] + (perp[0] / len) * lift, mid[1] + (perp[1] / len) * lift];
+    const startPoint = map.latLngToLayerPoint(start);
+    const endPoint = map.latLngToLayerPoint(end);
+    const dx = endPoint.x - startPoint.x;
+    const dy = endPoint.y - startPoint.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const normal = L.point(-dy / distance, dx / distance);
+    const lift = Math.min(90, Math.max(10, distance * 0.12));
+    const control = L.point(
+      (startPoint.x + endPoint.x) / 2 + normal.x * lift,
+      (startPoint.y + endPoint.y) / 2 + normal.y * lift
+    );
     return Array.from({length:frames + 1}, (_, index) => {
       const t = index / frames;
       const rest = 1 - t;
-      return [
-        rest * rest * start[0] + 2 * rest * t * ctrl[0] + t * t * end[0],
-        rest * rest * start[1] + 2 * rest * t * ctrl[1] + t * t * end[1]
-      ];
+      const point = L.point(
+        rest * rest * startPoint.x + 2 * rest * t * control.x + t * t * endPoint.x,
+        rest * rest * startPoint.y + 2 * rest * t * control.y + t * t * endPoint.y
+      );
+      return map.layerPointToLatLng(point);
     });
   }
   function showResult(guess, answer){
@@ -261,7 +266,7 @@
   }
   function animateArc(guess, answer){
     const frames = 82;
-    const points = arcPoints([guess.lat, guess.lng], answer, frames);
+    const points = arcPoints(L.latLng(guess.lat, guess.lng), L.latLng(answer[0], answer[1]), frames);
     const startTime = performance.now();
     const duration = 1550;
     lineLayer = L.polyline([points[0]], {color:'#9f2f2f',weight:3,opacity:.88}).addTo(map);
