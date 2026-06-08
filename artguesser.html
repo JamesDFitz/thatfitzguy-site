@@ -96,6 +96,7 @@
 <script>
 (function(){
   const DATA_URL = '/assets/artguesser-data.json?v=20260608-artguesser';
+  const IMAGE_LOAD_ERROR = 'That artwork image did not load, so I picked another one.';
   const FALLBACK_WORKS = [
     {title:'Mona Lisa',artist:'Leonardo da Vinci',image:'https://commons.wikimedia.org/wiki/Special:FilePath/Mona_Lisa.jpg',museum:'Louvre Museum',lat:48.8606,lng:2.3376,wiki:'https://en.wikipedia.org/wiki/Mona_Lisa'},
     {title:'The Starry Night',artist:'Vincent van Gogh',image:'https://commons.wikimedia.org/wiki/Special:FilePath/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',museum:'Museum of Modern Art',lat:40.761667,lng:-73.9775,wiki:'https://en.wikipedia.org/wiki/The_Starry_Night'},
@@ -127,6 +128,7 @@
   let lineLayer;
   let animationFrame = 0;
   let revealTimer = 0;
+  let dataWarning = '';
 
   const escapeMap = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
   const guessIcon = L.icon({
@@ -187,7 +189,7 @@
     animationFrame = 0;
     revealTimer = 0;
   }
-  function showError(message){errorLine.textContent = message || '';}
+  function showError(message){errorLine.textContent = message || dataWarning || '';}
 
   async function loadData(){
     try {
@@ -196,10 +198,12 @@
       const data = await response.json();
       works = (data.works || []).map(cleanWork).filter(Boolean);
       if (!works.length) throw new Error('Dataset was empty');
+      dataWarning = '';
       showError('');
     } catch (error) {
       works = FALLBACK_WORKS.map(cleanWork).filter(Boolean);
-      showError('Using the backup artwork list while the full dataset is unavailable.');
+      dataWarning = 'Using the backup artwork list while the full dataset is unavailable.';
+      showError(dataWarning);
     }
     updateStatus();
     loadArtwork();
@@ -224,8 +228,12 @@
     artImg.hidden = true;
     artTitle.textContent = current.title;
     artArtist.textContent = `by ${current.artist}`;
-    artImg.onload = () => { loading.hidden = true; artImg.hidden = false; };
-    artImg.onerror = () => { showError('That artwork image did not load, so I picked another one.'); loadArtwork(); };
+    artImg.onload = () => {
+      loading.hidden = true;
+      artImg.hidden = false;
+      if (errorLine.textContent === IMAGE_LOAD_ERROR) showError('');
+    };
+    artImg.onerror = () => { showError(IMAGE_LOAD_ERROR); loadArtwork(); };
     artImg.src = current.image;
     artImg.alt = `${current.title} by ${current.artist}`;
     updateStatus();
