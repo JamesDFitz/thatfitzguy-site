@@ -29,7 +29,7 @@
   .art-caption h2{font-size:1.25rem;margin:0 0 6px;color:var(--text)}
   .art-caption p{margin:0;color:var(--muted)}
   .map-panel{overflow:hidden}
-  #map{height:62vh;min-height:430px;width:100%}
+  #map{height:62vh;min-height:430px;width:100%;cursor:crosshair}
   .result-panel{margin-top:16px;padding:16px;color:var(--muted)}
   .result-panel strong{color:var(--text)}
   .result-panel .actual{display:block;margin:.35rem 0;color:var(--text);font-weight:800}
@@ -78,7 +78,7 @@
     <section>
       <div class="map-panel"><div id="map" aria-label="World map for guessing artwork location"></div></div>
       <div class="result-panel" id="result-panel" aria-live="polite">
-        Click the map where you think this artwork is housed.
+        Single-click the map where you think this artwork is housed.
       </div>
       <div class="game-actions">
         <button class="btn" type="button" id="next-art" hidden>Next artwork</button>
@@ -197,7 +197,7 @@
     guessed = false;
     clearMap();
     map.setView([20,0],2);
-    resultPanel.textContent = 'Click the map where you think this artwork is housed.';
+    resultPanel.textContent = 'Single-click the map where you think this artwork is housed.';
     nextButton.hidden = true;
     loading.hidden = false;
     artImg.hidden = true;
@@ -211,8 +211,9 @@
     setTimeout(() => map.invalidateSize(), 80);
   }
 
-  function revealAnswer(guess){
-    if (!current || guessed) return;
+  function revealAnswer(event){
+    const guess = event && event.latlng ? event.latlng : event;
+    if (!current || guessed || !guess || !Number.isFinite(guess.lat) || !Number.isFinite(guess.lng)) return;
     guessed = true;
     const answer = [current.lat, current.lng];
     const guessedPoint = [guess.lat, guess.lng];
