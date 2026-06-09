@@ -8,19 +8,53 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/site.css?v=20260608-flat" />
+  <link rel="stylesheet" href="/assets/site.css?v=20260609-visual" />
 </head>
 <body>
   <div data-include="/partials/header.html"></div>
 
   <section class="hero">
-    <div class="container">
-      <p class="eyebrow">Personal site</p>
-      <h1>Jim Fitz</h1>
-      <p>Safety professional, maker, collector, and tabletop tinkerer. This is a home base for the things I am building, collecting, and trying out in public.</p>
-      <div class="actions">
-        <a class="btn" href="/artwork.html">View Art Collection</a>
-        <a class="btn secondary" href="/type-a.html">Play Type A</a>
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">Personal site</p>
+        <h1>Jim Fitz</h1>
+        <p>Safety professional, maker, collector, and tabletop tinkerer. This is a home base for the things I am building, collecting, and trying out in public.</p>
+        <div class="actions">
+          <a class="btn" href="/artwork.html">View Art Collection</a>
+          <a class="btn secondary" href="/type-a.html">Play Type A</a>
+        </div>
+        <div class="hero-stats" aria-label="Site highlights">
+          <span class="data-chip"><strong>17</strong> original artworks</span>
+          <span class="data-chip"><strong>2</strong> playable experiments</span>
+          <span class="data-chip"><strong>0</strong> filler projects</span>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-label="Artwork and experiment preview">
+        <figure class="hero-art hero-art-main">
+          <img src="/assets/images/Cabaretti%20Charm.jpg" alt="Cabaretti Charm original artwork" decoding="async" fetchpriority="high">
+          <figcaption>Original art collection</figcaption>
+        </figure>
+        <figure class="hero-art hero-art-side">
+          <img src="/assets/images/Shock.jpg" alt="Shock original artwork" loading="lazy" decoding="async">
+          <figcaption>Magic art</figcaption>
+        </figure>
+        <figure class="hero-art hero-art-low">
+          <img src="/assets/images/The%20Lake.jpg" alt="The Lake painting by Ken Fitz" loading="lazy" decoding="async">
+          <figcaption>Family pieces</figcaption>
+        </figure>
+        <div class="hero-route" aria-label="ArtGuesser preview">
+          <svg class="route-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+            <path d="M14 42C22 20 39 48 50 21" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="14" cy="42" r="7" fill="currentColor" opacity=".18"/>
+            <circle cx="14" cy="42" r="3" fill="currentColor"/>
+            <path d="M50 13c-6 0-10 4.4-10 10 0 7.4 10 17 10 17s10-9.6 10-17c0-5.6-4-10-10-10Zm0 13.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" fill="currentColor"/>
+          </svg>
+          <div>
+            <strong>ArtGuesser is back</strong>
+            <span>Drop a pin, trace the route, and find out how close you were.</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -34,17 +68,26 @@
         </div>
       </div>
       <div class="card-grid">
-        <article class="card">
+        <article class="card feature-card">
+          <span class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="m8 15 3-4 2 3 2-2 3 3"/><path d="M8 9h.01"/></svg>
+          </span>
           <h3>Art Collection</h3>
           <p>Original paintings and illustrations in my collection, including Magic: The Gathering art, family work, and traditional pieces.</p>
           <a class="btn" href="/artwork.html">View Art Collection</a>
         </article>
-        <article class="card">
+        <article class="card feature-card">
+          <span class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M7 7v10"/><path d="M17 7v10"/><path d="M4 17h16"/><path d="M9 12h6"/></svg>
+          </span>
           <h3>Type A</h3>
           <p>A typing and delegation game about answering an inbox before the pressure gets away from you.</p>
           <a class="btn secondary" href="/type-a.html">Play the game</a>
         </article>
-        <article class="card">
+        <article class="card feature-card">
+          <span class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M3 12h18"/><path d="m5 5 14 14"/><path d="m19 5-14 14"/></svg>
+          </span>
           <h3>Experiments</h3>
           <p>A smaller page for web toys and prototypes that are stable enough to share.</p>
           <a class="btn secondary" href="/experiments.html">See experiments</a>
