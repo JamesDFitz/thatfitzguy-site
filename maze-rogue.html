@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maze Rogue - thatfitzguy</title>
+<meta name="description" content="A browser roguelite dot-maze game with permanent upgrades between runs.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=20260609-visual">
+<style>
+  .maze-page{padding:32px 0 58px}
+  .maze-hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:22px;align-items:center;border-bottom:1px solid var(--border);padding-bottom:22px;margin-bottom:20px}
+  .maze-hero h1{margin:0 0 10px;color:var(--brand-700);font-size:clamp(2.2rem,5vw,4rem)}
+  .maze-hero p{max-width:76ch;color:var(--muted);margin:0}
+  .maze-symbol{display:grid;place-items:center;width:88px;height:88px;border:1px solid rgba(35,89,79,.16);border-radius:8px;background:linear-gradient(135deg,#fff,#eef5f1);color:var(--brand);box-shadow:var(--shadow-soft)}
+  .maze-symbol svg{width:54px;height:54px}
+  .maze-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,390px);gap:18px;align-items:start}
+  .maze-stage,.maze-panel{border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.94);box-shadow:var(--shadow-soft)}
+  .maze-stage{overflow:hidden}
+  .maze-canvas-wrap{position:relative;display:grid;place-items:center;min-height:420px;padding:12px;background:linear-gradient(135deg,#07110f,#102f2a)}
+  #maze-game{width:100%;max-width:640px;aspect-ratio:1/1}
+  #maze-game canvas{display:block;width:100%!important;height:auto!important;border-radius:8px;box-shadow:0 16px 40px rgba(0,0,0,.28)}
+  .game-message{padding:14px 16px;border-top:1px solid var(--border);color:var(--muted);font-weight:700;background:#fff}
+  .maze-controls{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;padding:14px 16px;border-top:1px solid var(--border);background:#f7f9f7}
+  .maze-controls button{min-width:48px;min-height:42px;border:1px solid #cddbd4;border-radius:8px;background:#fff;color:var(--brand);font-weight:900;cursor:pointer}
+  .maze-controls button:hover{background:#edf4f1}
+  .maze-controls .up{grid-column:2}.maze-controls .left{grid-column:1}.maze-controls .phase{grid-column:2}.maze-controls .right{grid-column:3}.maze-controls .down{grid-column:2}
+  .maze-panel{padding:16px}
+  .run-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .run-actions .btn{margin:0}
+  .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+  .stat{border:1px solid var(--border);border-radius:8px;background:#fbfcf8;padding:10px}
+  .stat span{display:block;color:var(--muted);font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+  .stat strong{display:block;color:var(--brand-700);font-size:1.35rem;line-height:1.1;margin-top:3px}
+  .shop-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0 10px}
+  .shop-title h2{font-size:1.2rem;margin:0;color:var(--text)}
+  .shop-title span{color:var(--muted);font-size:.9rem;font-weight:800}
+  .shop-list{display:grid;gap:10px}
+  .shop-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--border);border-radius:8px;background:#fff;padding:10px}
+  .shop-item strong{display:block;color:var(--text)}
+  .shop-item span,.shop-item small{display:block;color:var(--muted);font-size:.88rem;line-height:1.35}
+  .shop-item small{margin-top:4px;font-weight:800;color:#506057}
+  .buy-button{border:1px solid var(--brand);border-radius:8px;background:var(--brand);color:#fff;font-weight:900;padding:.52rem .68rem;cursor:pointer}
+  .buy-button:disabled{opacity:.45;cursor:not-allowed}
+  .help-card{margin-top:14px;border:1px solid var(--border);border-radius:8px;background:linear-gradient(135deg,#f7f3e8,#f5f8f6);padding:12px;color:var(--muted)}
+  .help-card strong{color:var(--text)}
+  .help-card p{margin:0 0 8px}
+  .help-card p:last-child{margin-bottom:0}
+  @media (max-width:940px){.maze-layout,.maze-hero{grid-template-columns:1fr}.maze-symbol{width:68px;height:68px}.maze-symbol svg{width:42px;height:42px}.maze-panel{order:-1}}
+  @media (max-width:560px){.maze-canvas-wrap{min-height:300px;padding:8px}.stat-grid{grid-template-columns:1fr}.maze-controls{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div data-include="/partials/header.html"></div>
+<main class="container maze-page">
+  <header class="maze-hero">
+    <div>
+      <p class="eyebrow">Playable experiment</p>
+      <h1>Maze Rogue</h1>
+      <p>A roguelite dot-maze game: clear pellets, dodge sentries, bank Echoes after each run, then buy permanent powers for the next attempt.</p>
+    </div>
+    <span class="maze-symbol" aria-hidden="true">
+      <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10 10h44v44H10z"/><path d="M22 10v16h20V10"/><path d="M10 32h18"/><path d="M36 32h18"/><path d="M22 54V42h20v12"/>
+        <circle cx="20" cy="32" r="3" fill="currentColor" stroke="none"/><circle cx="44" cy="32" r="3" fill="currentColor" stroke="none"/>
+      </svg>
+    </span>
+  </header>
+
+  <section class="maze-layout" aria-label="Maze Rogue game">
+    <div class="maze-stage">
+      <div class="maze-canvas-wrap">
+        <div id="maze-game" aria-label="Maze Rogue playfield"></div>
+      </div>
+      <div class="game-message" id="mr-message" aria-live="polite">Buy a power, start a run, and clear dots for Echoes.</div>
+      <div class="maze-controls" aria-label="Touch controls">
+        <button class="up" type="button" data-move="up" aria-label="Move up">Up</button>
+        <button class="left" type="button" data-move="left" aria-label="Move left">Left</button>
+        <button class="phase" type="button" id="mr-phase-button" aria-label="Use Phase Step">Phase</button>
+        <button class="right" type="button" data-move="right" aria-label="Move right">Right</button>
+        <button class="down" type="button" data-move="down" aria-label="Move down">Down</button>
+      </div>
+    </div>
+
+    <aside class="maze-panel">
+      <div class="run-actions">
+        <button class="btn" type="button" id="mr-start">Start run</button>
+        <button class="btn secondary" type="button" id="mr-pause" disabled>Pause</button>
+        <button class="btn subtle" type="button" id="mr-reset">Reset progress</button>
+      </div>
+      <div class="stat-grid" aria-label="Run stats">
+        <div class="stat"><span>Banked Echoes</span><strong id="mr-bank">0</strong></div>
+        <div class="stat"><span>Run payout</span><strong id="mr-run-echoes">0</strong></div>
+        <div class="stat"><span>Score</span><strong id="mr-score">0</strong></div>
+        <div class="stat"><span>Level</span><strong id="mr-level">1</strong></div>
+        <div class="stat"><span>Lives</span><strong id="mr-lives">3</strong></div>
+        <div class="stat"><span>Phase charges</span><strong id="mr-phase">0</strong></div>
+        <div class="stat"><span>Best</span><strong id="mr-best">0 / L1</strong></div>
+      </div>
+
+      <div class="shop-title">
+        <h2>Permanent powers</h2>
+        <span>Between runs</span>
+      </div>
+      <div class="shop-list" id="mr-shop"></div>
+
+      <div class="help-card">
+        <p><strong>Controls:</strong> Arrow keys or WASD to steer. Space uses Phase Step once unlocked. P pauses.</p>
+        <p>Power pellets turn sentries vulnerable. Every run starts at level 1, but purchased powers stay in this browser.</p>
+      </div>
+    </aside>
+  </section>
+</main>
+<div data-include="/partials/footer.html"></div>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+<script src="/assets/site.js" defer></script>
+<script src="/assets/maze-rogue.js?v=20260610" defer></script>
+</body>
+</html>
